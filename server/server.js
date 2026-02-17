@@ -1,7 +1,5 @@
 require("dotenv").config();
 
-console.log("Gemini Key:", process.env.GEMINI_API_KEY);
-
 const express = require("express");
 const cors = require("cors");
 
@@ -13,7 +11,8 @@ app.use(express.json());
 const sipSimulationRoutes = require("./routes/sipsimulation");
 app.use("/api/sipsimulation", sipSimulationRoutes);
 
-
+const authRoutes = require("./routes/auth");
+app.use("/api/auth", authRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend running");
