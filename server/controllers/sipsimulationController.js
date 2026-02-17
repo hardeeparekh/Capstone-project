@@ -1,6 +1,8 @@
+const { generateExplanation } = require("../services/llmService");
+
 const { runMonteCarlo } = require("../services/monteCarloService");
 
-exports.runSIPSimulation = (req, res) => {
+exports.runSIPSimulation = async(req, res) => {
   try {
     const { sip, years, riskLevel, targetAmount, inflationRate } = req.body;
 
@@ -54,7 +56,17 @@ exports.runSIPSimulation = (req, res) => {
 
     const realBest =
       simulation.bestCase / Math.pow(1 + inflation, years);
-    res.json({
+    
+    const explanation = await generateExplanation({
+     totalInvestment: sip * 12 * years,
+     averageValue: simulation.average,
+     worstCase: simulation.worstCase,
+     bestCase: simulation.bestCase,
+     realAverageValue: Math.round(realAverage),
+     probabilityOfReachingTarget: probab
+    });
+
+      res.json({
       totalInvestment: sip * 12 * years,
       averageValue: simulation.average,
       worstCase: simulation.worstCase,
@@ -62,7 +74,8 @@ exports.runSIPSimulation = (req, res) => {
       realAverageValue: Math.round(realAverage),
       realWorstCase: Math.round(realWorst),
       realBestCase: Math.round(realBest),
-      probabilityOfReachingTarget: probab
+      probabilityOfReachingTarget: probab,
+      explanation
     });
 
   } catch (error) {
