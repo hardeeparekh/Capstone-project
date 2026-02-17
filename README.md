@@ -1,6 +1,6 @@
-# FutureForge (Capstone Project)
+# WorthWise (Capstone Project)
 
-**FutureForge** is a financial decision learning platform for teens and young adults.  
+**WorthWise** is a financial decision learning platform for teens and young adults.  
 The project focuses on building practical money judgment through simulation instead of theory-only learning.
 
 ## Project Goal
