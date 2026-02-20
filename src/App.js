@@ -1,5 +1,6 @@
 import './App.css';
 import { useEffect, useRef, useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import BackgroundEffects from './components/BackgroundEffects';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
@@ -9,6 +10,7 @@ import LevelsSection from './components/LevelsSection';
 import MathSection from './components/MathSection';
 import CTASection from './components/CTASection';
 import SiteFooter from './components/SiteFooter';
+import SIPSimulation from './components/SIPSimulation';
 
 function App() {
   const [isAltMode, setIsAltMode] = useState(false);
@@ -170,14 +172,23 @@ function App() {
         isAltMode={isAltMode}
         onToggleMode={() => setIsAltMode((prev) => !prev)}
       />
-      <main>
-        <HeroSection />
-        <GallerySection />
-        <TimelineSection timelineRef={timelineRef} timelineProgress={timelineProgress} />
-        <LevelsSection />
-        <MathSection />
-        <CTASection />
-      </main>
+      <Routes>
+        <Route path="/" element={
+          <main>
+            <HeroSection />
+            <GallerySection />
+            <TimelineSection timelineRef={timelineRef} timelineProgress={timelineProgress} />
+            <LevelsSection />
+            <MathSection />
+            <CTASection />
+          </main>
+        } />
+        <Route path="/sip" element={
+          <main className="section">
+            <SIPSimulation />
+          </main>
+        } />
+      </Routes>
       <SiteFooter />
     </>
   );
