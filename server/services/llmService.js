@@ -13,14 +13,15 @@ async function generateExplanation(data, mode="short") {
     prompt = `
     You are a financial literacy tutor.
 
-Explain the SIP results briefly.
+Explain the following SIP simulation results using the numbers provided.
+Refer to the actual values while explaining.
 
 Structure:
 
-📊 Summary: (max 2 short sentences)
-⚠️ Risk Insight: (1 short sentence)
-💰 Inflation Effect: (1 short sentence)
-🎯 Key Takeaway: (2 bullet points only)
+ Summary: (max 2 short sentences)
+ Risk Insight: (1 short sentence)
+ Inflation Effect: (1 short sentence)
+ Key Takeaway: (2 bullet points only)
 
 Keep it very short and simple.
 `
@@ -57,7 +58,7 @@ Probability of reaching target: ${data.probabilityOfReachingTarget}%
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: prompt
+      contents: fullprompt
     });
 
     return response.text;
