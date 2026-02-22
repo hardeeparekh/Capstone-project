@@ -58,7 +58,7 @@ Probability of reaching target: ${data.probabilityOfReachingTarget}%
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: fullprompt
+      contents: prompt
     });
 
     return response.text;

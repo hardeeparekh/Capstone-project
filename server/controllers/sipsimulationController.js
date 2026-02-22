@@ -77,12 +77,14 @@ exports.runSIPSimulation = async(req, res) => {
       realWorstCase: Math.round(realWorst),
       realBestCase: Math.round(realBest),
       probabilityOfReachingTarget: probab,
-      explanation
+      explanation,
+      yearlyGrowth: simulation.yearlyGrowth,
     });
 
   } catch (error) {
-    res.status(500).json({
-      error: "Monte Carlo simulation failed"
-    });
-  }
+  console.error("FULL ERROR:", error);
+  res.status(500).json({
+    error: error.message
+  });
+}
 };
