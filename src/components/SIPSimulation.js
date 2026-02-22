@@ -1,5 +1,15 @@
 import { useState } from "react";
 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer
+} from "recharts";
+
 
 export default function SIPSimulation() {
   // Snapshot States
@@ -170,8 +180,28 @@ export default function SIPSimulation() {
 
       {/* Results */}
      {results && (
+      
   <div className="sip-panel">
     <h3>Simulation Results</h3>
+
+    {results.yearlyGrowth && (
+  <div style={{ width: "100%", height: 300, marginBottom: "2rem" }}>
+    <ResponsiveContainer>
+      <LineChart data={results.yearlyGrowth}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="year" />
+        <YAxis />
+        <Tooltip />
+        <Line
+          type="monotone"
+          dataKey="value"
+          stroke="#00c6ff"
+          strokeWidth={2}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  </div>
+)}
 
     <p>
       Total Investment: ₹{results.totalInvestment?.toLocaleString()}
