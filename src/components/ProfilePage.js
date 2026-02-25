@@ -1,89 +1,224 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
+import React, { useState, useMemo } from "react";
+import "./ProfilePage.css";
 
-export default function ProfilePage({ user, onClose, onLogout }) {
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function ProfilePage({ user, onLogout }) {
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        setLoading(true);
-        // In a real app, you might fetch from a 'profiles' table
-        // const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-        // For now, we just use the user metadata
-        setProfile({
-          fullName: user.user_metadata?.full_name || 'User',
-          email: user.email,
-          lastSignIn: new Date(user.last_sign_in_at).toLocaleString(),
-        });
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      } finally {
-        setLoading(false);
-      }
+  const [formData, setFormData] = useState({
+    age: 21,
+    income: 75000,
+    expenses: 30000,
+    savings: 12000,
+    strategy: "Moderate",
+  });
+
+  const metrics = useMemo(() => {
+    const annualSavings = formData.income - formData.expenses;
+    const ratio =
+      formData.income > 0 ? (annualSavings / formData.income) * 100 : 0;
+    return {
+      savingsRate: Math.max(0, ratio).toFixed(1),
+      netWorth: (Number(formData.savings) + annualSavings).toLocaleString(),
+      burnRate: (formData.expenses / 12).toLocaleString(),
     };
+  }, [formData]);
 
-    if (user) {
-      fetchProfile();
-    }
-  }, [user]);
+  const [sims] = useState([
+    {
+      id: 101,
+      name: "Market Volatility",
+      score: 95,
+      status: "Optimal",
+      date: "24 Feb",
+    },
+    {
+      id: 102,
+      name: "Real Estate Leverage",
+      score: 88,
+      status: "Stable",
+      date: "18 Feb",
+    },
+    {
+      id: 103,
+      name: "Hyper-Inflation",
+      score: 42,
+      status: "Critical",
+      date: "10 Feb",
+    },
+    {
+      id: 104,
+      name: "Crypto Arbitrage",
+      score: 76,
+      status: "Stable",
+      date: "02 Feb",
+    },
+  ]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    onLogout();
+  const stats = {
+    level: 5,
+    totalSims: sims.length,
+    avgScore: 82,
+    insight: "Growth Architect",
+  };
+
+  const handleUpdate = async () => {
+    setIsSyncing(true);
+    // prepared for sync with http://localhost:5000/api
+    await new Promise((res) => setTimeout(res, 800));
+    setIsSyncing(false);
   };
 
   return (
-    <div
-      className="auth-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label="User Profile"
-      onClick={onClose}
-    >
-      <section className="auth-page" onClick={(event) => event.stopPropagation()}>
-        <button className="auth-close" onClick={onClose} aria-label="Close profile page">
-          Close
-        </button>
-
-        <div className="auth-grid" style={{ gridTemplateColumns: '1fr' }}>
-          <div className="auth-card" style={{ padding: '3rem' }}>
-            <h2 className="auth-title" style={{ marginBottom: '2rem' }}>Your Profile</h2>
-            
-            {loading ? (
-              <p>Loading profile...</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div>
-                  <p className="eyebrow">Full Name</p>
-                  <p style={{ fontSize: '1.25rem', fontWeight: '500' }}>{profile?.fullName}</p>
-                </div>
-                
-                <div>
-                  <p className="eyebrow">Email</p>
-                  <p style={{ fontSize: '1.25rem', fontWeight: '500' }}>{profile?.email}</p>
-                </div>
-
-                <div>
-                  <p className="eyebrow">Last Sign In</p>
-                  <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)' }}>{profile?.lastSignIn}</p>
-                </div>
-
-                <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
-                  <button 
-                    className="auth-submit" 
-                    onClick={handleLogout}
-                    style={{ backgroundColor: 'var(--error-color, #ef4444)' }}
-                  >
-                    Log Out
-                  </button>
-                </div>
-              </div>
-            )}
+    <div className="profile-container reveal show">
+      <header className="profile-header">
+        <div className="profile-identity">
+          <span className="eyebrow">WELCOME</span>
+          <h2 className="section-title">{user?.name || "Operator-01"}</h2>
+        </div>
+        <div className="profile-badges">
+          <div className="badge-item">
+            <span>Level</span> 0{stats.level}
+          </div>
+          <div className="badge-item">
+            <span>Avg Score</span> {stats.avgScore}
           </div>
         </div>
-      </section>
+      </header>
+
+      <div className="dashboard-grid">
+        <section className="glass-panel main-config">
+          <h3 className="panel-title">Baseline Parameters</h3>
+          <div className="field-grid">
+            <div className="input-box">
+              <label>Age</label>
+              <input
+                type="number"
+                value={formData.age}
+                onChange={(e) =>
+                  setFormData({ ...formData, age: e.target.value })
+                }
+              />
+            </div>
+            <div className="input-box">
+              <label>Strategy</label>
+              <select
+                value={formData.strategy}
+                onChange={(e) =>
+                  setFormData({ ...formData, strategy: e.target.value })
+                }
+              >
+                <option>Conservative</option>
+                <option>Moderate</option>
+                <option>Aggressive</option>
+              </select>
+            </div>
+            <div className="input-box span-2">
+              <label>Income</label>
+              <input
+                type="number"
+                value={formData.income}
+                onChange={(e) =>
+                  setFormData({ ...formData, income: e.target.value })
+                }
+              />
+            </div>
+            <div className="input-box">
+              <label>Expenses</label>
+              <input
+                type="number"
+                value={formData.expenses}
+                onChange={(e) =>
+                  setFormData({ ...formData, expenses: e.target.value })
+                }
+              />
+            </div>
+            <div className="input-box">
+              <label>Savings</label>
+              <input
+                type="number"
+                value={formData.savings}
+                onChange={(e) =>
+                  setFormData({ ...formData, savings: e.target.value })
+                }
+              />
+            </div>
+          </div>
+
+          <div className="efficiency-meter">
+            <div className="meter-head">
+              <span className="eyebrow">Savings Efficiency</span>
+              <span className="meter-val">{metrics.savingsRate}%</span>
+            </div>
+            <div className="meter-track">
+              <span
+                className="meter-fill"
+                style={{ width: `${metrics.savingsRate}%` }}
+              ></span>
+            </div>
+          </div>
+
+          <button
+            className={`btn btn-primary shine ${isSyncing ? "loading" : ""}`}
+            onClick={handleUpdate}
+          >
+            {isSyncing ? "Syncing core..." : "Update Baseline"}
+          </button>
+        </section>
+
+        <aside className="profile-sidebar">
+          <div className="intel-box">
+            <div className="badge-ai">Neural Insight</div>
+            <p className="insight-title">{stats.insight}</p>
+            <p className="decision-copy">
+              Projected annual balance: <strong>${metrics.netWorth}</strong>.
+              Burn rate: <strong>${metrics.burnRate}/mo</strong>.
+            </p>
+          </div>
+
+          <div className="archive-card">
+            <div className="archive-header">
+              <span className="eyebrow">Simulation Archives</span>
+              <span className="sim-count">{stats.totalSims} Runs</span>
+            </div>
+
+            <div className="log-scroll">
+              {sims.map((sim) => (
+                <div className="log-row" key={sim.id}>
+                  <div
+                    className="log-indicator"
+                    style={{
+                      background:
+                        sim.score > 90
+                          ? "var(--accent-2)"
+                          : sim.score > 70
+                            ? "var(--accent)"
+                            : "var(--danger)",
+                    }}
+                  >
+                    {sim.score}
+                  </div>
+                  <div className="log-details">
+                    <span className="log-name">{sim.name}</span>
+                    <span className="log-meta">
+                      {sim.status} • {sim.date}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className="btn btn-ghost full-vault-btn">
+              Access Full Vault
+            </button>
+          </div>
+
+          <div className="footer-actions">
+            <button className="btn btn-ghost" onClick={onLogout}>
+              Sign Out
+            </button>
+            <button className="btn btn-primary shine">New Simulation</button>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

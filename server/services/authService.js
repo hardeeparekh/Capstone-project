@@ -22,4 +22,14 @@ const checkConnection = async () => {
   }
 };
 
-module.exports = { signup, login, checkConnection };
+const logout = async (token) => {
+  return await supabase.auth.signOut({ scope: "global" });
+};
+
+module.exports = {
+  signup,
+  login,
+  logout,
+};
+
+module.exports = { signup, login, checkConnection, logout};
