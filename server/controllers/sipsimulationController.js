@@ -84,6 +84,9 @@ exports.runSIPSimulation = async(req, res) => {
       probabilityOfReachingTarget: probab,
       explanation,
       yearlyGrowth: simulation.yearlyGrowth,
+      yearlyAverage: simulation.yearlyAverage,
+      yearlyWorst: simulation.yearlyWorst,
+      yearlyBest: simulation.yearlyBest,
     });
 
   } catch (error) {

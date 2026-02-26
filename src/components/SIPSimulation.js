@@ -195,10 +195,13 @@ export default function SIPSimulation() {
   <div className="sip-panel">
     <h3>Simulation Results</h3>
 
-    {results.yearlyGrowth && (
-  <div style={{ width: "100%", height: 300, marginBottom: "2rem" }}>
-    <ResponsiveContainer>
-      <LineChart data={results.yearlyGrowth}>
+    <div className="graph-container">
+
+  {/* Average Graph */}
+  <div className="graph-box">
+    <h4>Expected Growth</h4>
+    <ResponsiveContainer width="100%" height={250}>
+      <LineChart data={results.yearlyAverage}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="year" />
         <YAxis />
@@ -206,14 +209,39 @@ export default function SIPSimulation() {
         <Line
           type="monotone"
           dataKey="value"
-          stroke="#00c6ff"
+          stroke="#3b82f6"
           strokeWidth={2}
         />
       </LineChart>
     </ResponsiveContainer>
   </div>
-)}
 
+  {/* Risk Spread Graph */}
+  <div className="graph-box">
+    <h4>Risk Spread (Best vs Worst)</h4>
+    <ResponsiveContainer width="100%" height={250}>
+      <LineChart>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="year" />
+        <YAxis />
+        <Tooltip />
+        <Line
+          data={results.yearlyWorst}
+          type="monotone"
+          dataKey="value"
+          stroke="#ef4444"
+        />
+        <Line
+          data={results.yearlyBest}
+          type="monotone"
+          dataKey="value"
+          stroke="#22c55e"
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  </div>
+
+</div>
     <p>
       Total Investment: ₹{results.totalInvestment?.toLocaleString()}
     </p>
@@ -234,40 +262,6 @@ export default function SIPSimulation() {
       Inflation Adjusted Average: ₹{results.realAverageValue?.toLocaleString()}
     </p>
 
-    {/* System Insight Cards */}
-<div className="system-insights">
-
-  <div className="insight-card">
-    <h4>📈 Compounding Effect</h4>
-    <p>
-      You invested ₹{results.totalInvestment.toLocaleString()}.
-      It grew to ₹{results.averageValue.toLocaleString()}.
-      The extra ₹
-      {(results.averageValue - results.totalInvestment).toLocaleString()}
-      is generated through compounding over time.
-    </p>
-  </div>
-
-  <div className="insight-card">
-    <h4>⚠️ Risk Range</h4>
-    <p>
-      Your outcome could vary between ₹
-      {results.worstCase.toLocaleString()} and ₹
-      {results.bestCase.toLocaleString()}.
-      This difference shows how volatility affects returns.
-    </p>
-  </div>
-
-  <div className="insight-card">
-    <h4>💰 Inflation Reality</h4>
-    <p>
-      After inflation, your average value feels like ₹
-      {results.realAverageValue.toLocaleString()}
-      in today’s purchasing power.
-    </p>
-  </div>
-
-</div>
 
     {results.probabilityOfReachingTarget !== null && (
       <p>
