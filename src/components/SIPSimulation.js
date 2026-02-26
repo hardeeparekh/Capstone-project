@@ -67,14 +67,25 @@ export default function SIPSimulation() {
       const response = await fetch("http://localhost:5000/api/sipsimulation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // body: JSON.stringify({
+        //   sip: Number(sip),
+        //   years: Number(years),
+        //   riskLevel: risk,
+        //   targetAmount: 0,
+        //   inflationRate: 6,
+        //   mode: mode,
+        // }),
+
         body: JSON.stringify({
-          sip: Number(sip),
-          years: Number(years),
-          riskLevel: risk,
-          targetAmount: 0,
-          inflationRate: 6,
-          mode: mode,
-        }),
+  sip: Number(sip),
+  years: Number(years),
+  riskLevel: risk,
+  targetAmount: 0,
+  inflationRate: 6,
+  mode,
+  monthlyIncome: income,
+  monthlyExpenses: expenses
+}),
       });
 
       const data = await response.json();
@@ -223,6 +234,41 @@ export default function SIPSimulation() {
       Inflation Adjusted Average: ₹{results.realAverageValue?.toLocaleString()}
     </p>
 
+    {/* System Insight Cards */}
+<div className="system-insights">
+
+  <div className="insight-card">
+    <h4>📈 Compounding Effect</h4>
+    <p>
+      You invested ₹{results.totalInvestment.toLocaleString()}.
+      It grew to ₹{results.averageValue.toLocaleString()}.
+      The extra ₹
+      {(results.averageValue - results.totalInvestment).toLocaleString()}
+      is generated through compounding over time.
+    </p>
+  </div>
+
+  <div className="insight-card">
+    <h4>⚠️ Risk Range</h4>
+    <p>
+      Your outcome could vary between ₹
+      {results.worstCase.toLocaleString()} and ₹
+      {results.bestCase.toLocaleString()}.
+      This difference shows how volatility affects returns.
+    </p>
+  </div>
+
+  <div className="insight-card">
+    <h4>💰 Inflation Reality</h4>
+    <p>
+      After inflation, your average value feels like ₹
+      {results.realAverageValue.toLocaleString()}
+      in today’s purchasing power.
+    </p>
+  </div>
+
+</div>
+
     {results.probabilityOfReachingTarget !== null && (
       <p>
         Probability of Success: {results.probabilityOfReachingTarget}%
@@ -230,9 +276,18 @@ export default function SIPSimulation() {
     )}
 
     <div className="ai-explanation">
-      <h4>AI Insight</h4>
-      <p>{results.explanation}</p>
-    </div>
+  <h4>AI Insight</h4>
+
+  {results.explanation.split("\n").map((line, index) =>
+    line.trim() ? (
+      <div key={index} className="detail-line">
+        {line}
+      </div>
+    ) : null
+  )}
+
+</div>
+
   </div>
 )}
     </section>

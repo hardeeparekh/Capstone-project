@@ -4,7 +4,7 @@ const { runMonteCarlo } = require("../services/monteCarloService");
 
 exports.runSIPSimulation = async(req, res) => {
   try {
-    const { sip, years, riskLevel, targetAmount, inflationRate, mode } = req.body;
+    const { sip, years, riskLevel, targetAmount, inflationRate, mode, monthlyIncome, monthlyExpenses } = req.body;
 
     if (!sip || !years || !riskLevel) {
       return res.status(400).json({
@@ -58,15 +58,20 @@ exports.runSIPSimulation = async(req, res) => {
       simulation.bestCase / Math.pow(1 + inflation, years);
     
     const explanation = await generateExplanation({
-     totalInvestment: sip * 12 * years,
-     averageValue: simulation.average,
-     worstCase: simulation.worstCase,
-     bestCase: simulation.bestCase,
-     realAverageValue: Math.round(realAverage),
-     probabilityOfReachingTarget: probab
-    }, 
-    mode || "short"
-    );
+  totalInvestment: sip * 12 * years,
+  averageValue: simulation.average,
+  worstCase: simulation.worstCase,
+  bestCase: simulation.bestCase,
+  realAverageValue: Math.round(realAverage),
+  probabilityOfReachingTarget: probab,
+  sipAmount: sip,
+  years,
+  riskLevel,
+  monthlyIncome,
+  monthlyExpenses,
+  monthlySavings: monthlyIncome - monthlyExpenses
+    }, mode || "short");
+
 
       res.json({
       totalInvestment: sip * 12 * years,
