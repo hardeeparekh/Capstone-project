@@ -1213,3 +1213,27 @@ main {
 
 }
 
+.graph-container {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.graph-box {
+  flex: 1;
+  min-width: 300px;
+}
+
+.ai-chat input {
+  width: 70%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  outline: none;
+}
+
+.ai-chat input:focus {
+  border-color: #ff6a3d;
+  box-shadow: 0 0 4px rgba(255,106,61,0.4);
+}

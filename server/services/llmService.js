@@ -1,18 +1,20 @@
-async function generateExplanation(data, mode="short") {
+async function generateExplanation(data, mode = "short", userQuestion = null) {
   try {
 
-    
     const { GoogleGenAI } = await import("@google/genai");
 
     const ai = new GoogleGenAI({
       apiKey: process.env.GEMINI_API_KEY
     });
-    let prompt;
 
+    let prompt;
+ // short ai explaination
+ 
     if (mode === "short") {
-  prompt = `
+
+      prompt = `
 You are a friendly financial coach explaining results to a beginner.
-Give very simple and practical advice.
+
 Rules:
 - No financial jargon.
 - No product names (no ELSS, PPF, etc.).
@@ -28,9 +30,14 @@ Focus on:
 
 Keep it calm, supportive, and simple.
 `;
-}
-else {
-  prompt = `
+
+    }
+
+// detailed ai explaination
+
+    else if (mode === "detailed") {
+
+      prompt = `
 You are a practical financial mentor guiding a beginner.
 
 Give a concise structured review.
@@ -62,12 +69,39 @@ Format strictly like this:
 
 Keep it clean, structured, and easy to read.
 `;
-}
+
+    }
+
+   //detailed explaination with user question
+
+    else if (mode === "chat" && userQuestion) {
+
+      prompt = `
+You are a calm and practical financial assistant.
+
+The user has already run an investment simulation.
+Answer their question using their financial data.
+
+Rules:
+- Explain in simple language.
+- Avoid technical jargon.
+- Maximum 4–5 sentences.
+- Do not recommend specific financial products.
+- Focus on clarity and understanding.
+
+User Question:
+${userQuestion}
+`;
+
+    }
+
+   
 
     const fullPrompt = `
 ${prompt}
 
 USER DATA:
+Age: ${data.age}
 Monthly Income: ₹${data.monthlyIncome}
 Monthly Expenses: ₹${data.monthlyExpenses}
 Monthly Savings: ₹${data.monthlySavings}
@@ -82,8 +116,9 @@ Worst Case: ₹${data.worstCase}
 Best Case: ₹${data.bestCase}
 Inflation Adjusted Average: ₹${data.realAverageValue}
 Probability of reaching target: ${data.probabilityOfReachingTarget}%
-`;
 
+${userQuestion ? `User Question: ${userQuestion}` : ""}
+`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -93,8 +128,10 @@ Probability of reaching target: ${data.probabilityOfReachingTarget}%
     return response.text;
 
   } catch (error) {
+
     console.error("Gemini error:", error);
-    return "AI explanation currently unavailable.";
+
+    return "AI explanation is currently unavailable. Please try again later.";
   }
 }
 
