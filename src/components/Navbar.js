@@ -71,7 +71,6 @@ export default function Navbar({
 
           {isMenuOpen && (
             <div className="nav-menu-dropdown">
-              {/* Show Home only when on Profile */}
               {isProfileActive ? (
                 <button className="menu-item" onClick={handleBrandClick}>
                   <span className="menu-item-glyph">H</span>
@@ -81,7 +80,6 @@ export default function Navbar({
                   </div>
                 </button>
               ) : (
-                /* Show Dashboard only when on Home */
                 user && (
                   <button className="menu-item" onClick={onOpenAuth}>
                     <span className="menu-item-glyph">D</span>

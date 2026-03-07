@@ -11,9 +11,11 @@ app.use(cors());
 app.use(express.json());
 
 const sipSimulationRoutes = require("./routes/sipsimulation");
-app.use("/api/sipsimulation", sipSimulationRoutes);
-
+const snapShotRoutes = require("./routes/snapshot");
 const authRoutes = require("./routes/auth");
+
+app.use("/api/sipsimulation", sipSimulationRoutes);
+app.use("/api/snapshot", snapShotRoutes);
 app.use("/api/auth", authRoutes);
 
 app.get("/", (req, res) => {
