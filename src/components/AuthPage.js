@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 
+function getPasswordChecks(password) {
+  return [
+    { key: 'minLength', label: 'At least 8 characters', met: password.length >= 8 },
+    { key: 'number', label: 'At least 1 number', met: /\d/.test(password) },
+    { key: 'uppercase', label: 'At least 1 uppercase letter', met: /[A-Z]/.test(password) },
+    { key: 'lowercase', label: 'At least 1 lowercase letter', met: /[a-z]/.test(password) },
+  ];
+}
+
 function buildPayload(mode, form) {
   if (mode === 'login') {
     return {
@@ -16,6 +25,8 @@ function buildPayload(mode, form) {
 }
 
 export default function AuthPage({ onClose, onAuthSubmit }) {
+  const passwordRuleMessage =
+    'Password must be at least 8 characters and include at least 1 number, 1 uppercase letter, and 1 lowercase letter.';
   const [mode, setMode] = useState('login');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
@@ -25,6 +36,7 @@ export default function AuthPage({ onClose, onAuthSubmit }) {
     password: '',
     confirmPassword: '',
   });
+  const passwordChecks = useMemo(() => getPasswordChecks(form.password), [form.password]);
 
   const submitLabel = useMemo(() => (mode === 'login' ? 'Log In' : 'Create Account'), [mode]);
 
@@ -44,13 +56,25 @@ export default function AuthPage({ onClose, onAuthSubmit }) {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleModeChange = (nextMode) => {
+    setMode(nextMode);
+    setMessage('');
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setMessage('');
 
-    if (mode === 'signup' && form.password !== form.confirmPassword) {
-      setMessage('Passwords do not match.');
-      return;
+    if (mode === 'signup') {
+      if (!passwordChecks.every((check) => check.met)) {
+        setMessage(passwordRuleMessage);
+        return;
+      }
+
+      if (form.password !== form.confirmPassword) {
+        setMessage('Passwords do not match.');
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -71,7 +95,11 @@ export default function AuthPage({ onClose, onAuthSubmit }) {
           : 'Signup successful! Please check your email to verify your account if required.'
       );
     } catch (error) {
-      setMessage(error?.message || 'Authentication failed. Please try again.');
+      if (mode === 'login') {
+        setMessage('Invalid login credentials.');
+      } else {
+        setMessage(error?.message || 'Authentication failed. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -109,7 +137,7 @@ export default function AuthPage({ onClose, onAuthSubmit }) {
             <div className="auth-tabs" role="tablist" aria-label="Authentication modes">
               <button
                 className={`auth-tab ${mode === 'login' ? 'active' : ''}`}
-                onClick={() => setMode('login')}
+                onClick={() => handleModeChange('login')}
                 role="tab"
                 aria-selected={mode === 'login'}
               >
@@ -117,7 +145,7 @@ export default function AuthPage({ onClose, onAuthSubmit }) {
               </button>
               <button
                 className={`auth-tab ${mode === 'signup' ? 'active' : ''}`}
-                onClick={() => setMode('signup')}
+                onClick={() => handleModeChange('signup')}
                 role="tab"
                 aria-selected={mode === 'signup'}
               >
@@ -163,10 +191,25 @@ export default function AuthPage({ onClose, onAuthSubmit }) {
                   value={form.password}
                   onChange={handleField}
                   placeholder="Enter password"
-                  minLength={6}
+                  minLength={mode === 'signup' ? 8 : undefined}
+                  title={mode === 'signup' ? passwordRuleMessage : undefined}
                   required
                 />
               </label>
+
+              {mode === 'signup' && (
+                <ul className="password-checklist" aria-live="polite">
+                  {passwordChecks.map((check) => (
+                    <li
+                      key={check.key}
+                      className={`password-check ${check.met ? 'met' : 'unmet'}`}
+                    >
+                      <span className="password-check-icon" aria-hidden="true" />
+                      <span>{check.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
 
               {mode === 'signup' && (
                 <label className="auth-label">
@@ -178,7 +221,7 @@ export default function AuthPage({ onClose, onAuthSubmit }) {
                     value={form.confirmPassword}
                     onChange={handleField}
                     placeholder="Confirm password"
-                    minLength={6}
+                    minLength={8}
                     required
                   />
                 </label>

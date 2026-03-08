@@ -71,7 +71,13 @@ function App() {
     });
 
     const result = await res.json();
-    if (!res.ok) throw new Error(result.message || "Authentication failed");
+    if (!res.ok) {
+      const errorMessage =
+        result.message ||
+        (Array.isArray(result.errors) ? result.errors.join(". ") : null) ||
+        "Authentication failed";
+      throw new Error(errorMessage);
+    }
 
     if (result.token) localStorage.setItem("access_token", result.token);
     setUser(result.data.user);
