@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Simulation from "./Simulation";
+import EconomicDashboard, { fetchLiveMarket } from "./EconomicDashboard";
 import DecisionSimulator from "./DecisionSimulator";
 import "./ProfilePage.css";
 
@@ -337,6 +338,7 @@ function Achievement({ icon, label, unlocked }) {
     </div>
   );
 }
+
 function ScoreRing({ score }) {
   const r = 36,
     circ = 2 * Math.PI * r;
@@ -386,19 +388,68 @@ function ScoreRing({ score }) {
   );
 }
 
-function TickerTape({ items }) {
+function LiveTicker({ market, userItems, loading }) {
+  const mktItems = market
+    ? [
+        {
+          label: "USD/INR",
+          val: market.usdInr.val,
+          up: market.usdInr.up,
+          cat: "FOREX",
+        },
+        {
+          label: "EUR/INR",
+          val: market.eurInr.val,
+          up: market.eurInr.up,
+          cat: "FOREX",
+        },
+        {
+          label: "GBP/INR",
+          val: market.gbpInr.val,
+          up: market.gbpInr.up,
+          cat: "FOREX",
+        },
+        { label: "RBI Repo", val: market.repoRate, up: true, cat: "RATE" },
+        { label: "India CPI", val: market.inflation, up: false, cat: "MACRO" },
+        { label: "GDP Growth", val: market.gdp, up: true, cat: "MACRO" },
+        ...market.mfs
+          .filter((m) => m.nav)
+          .map((m) => ({
+            label: m.name,
+            val: "₹" + m.nav,
+            up: m.up,
+            cat: "NAV",
+            change: m.change,
+          })),
+      ]
+    : [
+        { label: "USD/INR", val: "83.94", up: false, cat: "FOREX" },
+        { label: "RBI Repo", val: "6.50%", up: true, cat: "RATE" },
+      ];
+  const all = [...mktItems, ...userItems];
   return (
     <div className="ticker-wrap">
-      <div className="ticker-inner">
-        {[...items, ...items].map((item, i) => (
-          <span
-            key={i}
-            className={`ticker-item ${item.up ? "ticker-up" : "ticker-down"}`}
-          >
-            {item.label} <strong>{item.val}</strong>
-            <span className="ticker-arrow">{item.up ? "▲" : "▼"}</span>
-          </span>
-        ))}
+      <div className="ticker-status">
+        <span className={"ticker-dot" + (loading ? " ticker-dot--load" : "")} />
+        <span className="ticker-lbl">{loading ? "FETCHING" : "LIVE"}</span>
+      </div>
+      <div className="ticker-track">
+        <div className="ticker-inner">
+          {[...all, ...all].map((item, i) => (
+            <span
+              key={i}
+              className={
+                "ticker-item " + (item.up ? "ticker-up" : "ticker-down")
+              }
+            >
+              {item.cat && <b className="t-cat">{item.cat}</b>}
+              <span className="t-lbl">{item.label}</span>
+              <strong className="t-val">{item.val}</strong>
+              {item.change && <span className="t-chg">{item.change}</span>}
+              <span className="t-arr">{item.up ? "▲" : "▼"}</span>
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -435,7 +486,34 @@ export default function ProfilePage({ user, onLogout }) {
 
   const set = (key, val) => setForm((p) => ({ ...p, [key]: val }));
 
-  // Live computed values
+  const [market, setMarket] = useState(null);
+  const [mktLoading, setMktLoading] = useState(true);
+  const [mktUpdated, setMktUpdated] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      setMktLoading(true);
+      const data = await fetchLiveMarket();
+      if (alive) {
+        setMarket(data);
+        setMktLoading(false);
+        setMktUpdated(
+          new Date().toLocaleTimeString("en-IN", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        );
+      }
+    };
+    load();
+    const id = setInterval(load, 5 * 60 * 1000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
+
   const surplus = Math.max(0, form.income - form.expenses);
   const savingsRate =
     form.income > 0 ? Math.round((surplus / form.income) * 100) : 0;
@@ -640,7 +718,11 @@ export default function ProfilePage({ user, onLogout }) {
         </div>
       </header>
 
-      <TickerTape items={tickerItems} />
+      <LiveTicker
+        market={market}
+        userItems={tickerItems}
+        loading={mktLoading}
+      />
 
       {/* Progress steps  */}
       <div className="pp-steps">
@@ -1090,6 +1172,14 @@ export default function ProfilePage({ user, onLogout }) {
           </div>
         </div>
       </div>
+
+      {/* Live economic dashboard */}
+      <EconomicDashboard
+        market={market}
+        loading={mktLoading}
+        updatedAt={mktUpdated}
+        strategy={form.strategy}
+      />
 
       {showModal && activeSimResult && (
         <Simulation
