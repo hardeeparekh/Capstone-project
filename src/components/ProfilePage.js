@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Simulation from "./Simulation";
+import DecisionSimulator from "./DecisionSimulator";
 import "./ProfilePage.css";
 
 const API_BASE = "http://localhost:5000/api";
@@ -42,6 +43,7 @@ function AnimatedNumber({ value, prefix = "₹", duration = 1000 }) {
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
   }, [value]);
+
   return (
     <>
       {prefix}
@@ -572,6 +574,11 @@ export default function ProfilePage({ user, onLogout }) {
     { icon: "🚀", label: "10+ Years", unlocked: form.sipYears >= 10 },
   ];
 
+  const handleDecisionComplete = () => {
+    setStep((s) => Math.max(s, 3));
+    showToast("Decision simulator completed.");
+  };
+
   return (
     <div className="pp-root">
       <div className="confetti-layer" ref={confettiRef} />
@@ -640,11 +647,11 @@ export default function ProfilePage({ user, onLogout }) {
         {[
           { label: "Calibrate", sub: "Set your profile", icon: "📊" },
           { label: "Simulate", sub: "Monte Carlo", icon: "🎲" },
-          { label: "Decide", sub: "Coming soon", icon: "🧠" },
+          { label: "Decide", sub: "Decision game", icon: "🧠" },
         ].map((s, i) => (
           <div
             key={i}
-            className={`pp-step ${step > i ? "done" : step === i ? "active" : ""} ${i === 2 ? "locked" : ""}`}
+            className={`pp-step ${step > i ? "done" : step === i ? "active" : ""} ${i === 2 && step < 2 ? "locked" : ""}`}
           >
             <div className="step-bubble">
               <span className="step-icon">{s.icon}</span>
@@ -1017,51 +1024,14 @@ export default function ProfilePage({ user, onLogout }) {
 
         {/* Feature 3 + History  */}
         <div className="pp-col-right">
-          <div className="glass-panel f3-panel">
-            <div className="f3-toprow">
-              <div className="f3-badge">COMING SOON</div>
-              <span className="f3-week">Week 3/4</span>
-            </div>
-            <div className="f3-icon">🧠</div>
-            <h3 className="panel-title">Decision Simulator</h3>
-            <p className="f3-desc">
-              Step through years of your financial life. Each year, the market
-              moves — you decide: hold, withdraw, increase SIP, or change risk.
-              See how your choices stack up against the optimal strategy, then
-              get an AI reflection on your decisions.
-            </p>
-            <div className="f3-feats">
-              {[
-                "Year-by-year simulation",
-                "Market crash scenarios",
-                "User vs Optimal strategy",
-                "AI decision coaching",
-                "Decision score",
-              ].map((f, i) => (
-                <div key={i} className="f3-feat">
-                  {f}
-                </div>
-              ))}
-            </div>
-            <div className="f3-progress-wrap">
-              <span className="f3-prog-label">Build progress</span>
-              <span className="f3-prog-label">75%</span>
-            </div>
-            <div className="f3-bar">
-              <div className="f3-fill" />
-            </div>
-            <div className="f3-levels">
-              {[
-                { l: "Explorer", on: true },
-                { l: "Analyst", on: false },
-                { l: "Strategist", on: false },
-              ].map((x, i) => (
-                <span key={i} className={`f3-lv ${x.on ? "on" : ""}`}>
-                  {x.on ? "🔓" : "🔒"} {x.l}
-                </span>
-              ))}
-            </div>
-          </div>
+          <DecisionSimulator
+            defaults={{
+              income: form.income,
+              expenses: form.expenses,
+              savings: form.savings,
+            }}
+            onComplete={handleDecisionComplete}
+          />
 
           {/* Simulation history */}
           {simHistory.length > 0 && (
@@ -1130,3 +1100,4 @@ export default function ProfilePage({ user, onLogout }) {
     </div>
   );
 }
+
