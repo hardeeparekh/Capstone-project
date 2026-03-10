@@ -11,6 +11,7 @@ import CTASection from "./components/CTASection";
 import SiteFooter from "./components/SiteFooter";
 import AuthPage from "./components/AuthPage";
 import ProfilePage from "./components/ProfilePage";
+import ResetPasswordPage from "./components/ResetPasswordPage";
 
 const API_BASE = "http://localhost:5000/api";
 
@@ -167,7 +168,9 @@ function App() {
       />
 
       <main>
-        {currentPath === "/profile" && user ? (
+        {currentPath === "/reset-password" ? (
+          <ResetPasswordPage onDone={() => { navigate("/"); setIsAuthOpen(true); }} />
+        ) : currentPath === "/profile" && user ? (
           <ProfilePage
             user={user}
             onLogout={handleLogout}

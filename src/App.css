@@ -1587,3 +1587,47 @@ main {
     max-width: none;
   }
 }
+
+.auth-forgot-link {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0;
+  align-self: flex-end;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+}
+.auth-forgot-link:hover { color: var(--accent); }
+
+.auth-forgot-header { margin-bottom: 1.25rem; }
+
+.auth-back-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.75rem;
+  transition: color 0.2s;
+}
+.auth-back-btn:hover { color: var(--fg); }
+
+.auth-forgot-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+
+.auth-forgot-hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.auth-message--success { color: #0e9f6e; }
+.auth-message--error   { color: var(--accent); }
