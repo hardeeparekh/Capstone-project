@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Simulation from "./Simulation";
 import EconomicDashboard, { fetchLiveMarket } from "./EconomicDashboard";
 import DecisionSimulator from "./DecisionSimulator";
+import FinanceChatbot from "./FinanceChatbot";
 import "./ProfilePage.css";
 
 const API_BASE = "http://localhost:5000/api";
@@ -1187,7 +1188,7 @@ export default function ProfilePage({ user, onLogout }) {
           onClose={() => setShowModal(false)}
         />
       )}
+      <FinanceChatbot financialContext={form} />
     </div>
   );
 }
-

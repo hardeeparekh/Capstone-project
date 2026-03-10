@@ -120,7 +120,7 @@ export default function DecisionSimulator({ defaults, onComplete }) {
     setError("");
 
     if (salary <= 0 || expenses < 0 || expenses >= salary) {
-      setError("Salary must be greater than expenses to run Feature 2.");
+      setError("Salary must be greater than expenses to run Decision Simulator.");
       return;
     }
 
@@ -215,7 +215,7 @@ export default function DecisionSimulator({ defaults, onComplete }) {
             >
               <div className="modal-header-simple">
                 <div>
-                  <h3 className="panel-title">Feature 2: Decision Simulator</h3>
+                  <h3 className="panel-title">Decision Simulator</h3>
                   <p className="panel-sub">Year-by-year choices with market shocks</p>
                 </div>
                 <button className="btn-close" onClick={closeModal} disabled={loading}>
@@ -408,7 +408,7 @@ export default function DecisionSimulator({ defaults, onComplete }) {
     <div className="glass-panel decision-panel">
       <div className="decision-panel-head">
         <div>
-          <div className="decision-eyebrow">FEATURE 2</div>
+          <div className="decision-eyebrow"></div>
           <h3 className="panel-title">Decision Simulator</h3>
           <p className="panel-sub">
             Play a 15-year market journey and compare your decisions to a baseline.
@@ -444,7 +444,7 @@ export default function DecisionSimulator({ defaults, onComplete }) {
       )}
 
       <button className="btn btn-primary full-w" onClick={openModal}>
-        {phase === "playing" ? "Resume Scenario" : "Launch Feature 2"}
+        {phase === "playing" ? "Resume Scenario" : "Launch"}
       </button>
 
       {modalNode}

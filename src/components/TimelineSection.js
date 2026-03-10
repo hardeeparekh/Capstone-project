@@ -23,7 +23,7 @@ export default function TimelineSection({ timelineRef, timelineProgress }) {
 
         <article className="feature-node right reveal reveal-right tilt" data-step="02">
           <span className="step-number">02</span>
-          <span className="tag">Feature 2</span>
+          <span className="tag"></span>
           <h3 className="feature-title">The Life Path Engine</h3>
           <p className="feature-copy">
             Year-by-year decisions. Every click ages your portfolio. You choose: upgrade
