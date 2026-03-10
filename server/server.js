@@ -14,11 +14,13 @@ const sipSimulationRoutes = require("./routes/sipsimulation");
 const snapShotRoutes = require("./routes/snapshot");
 const authRoutes = require("./routes/auth");
 const decisionSimulatorRoutes = require("./routes/decisionSimulator");
+const chatRoutes = require("./routes/chat");
 
 app.use("/api/sipsimulation", sipSimulationRoutes);
 app.use("/api/snapshot", snapShotRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/decision-simulator", decisionSimulatorRoutes);
+app.use("/api/chat", chatRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend running");
