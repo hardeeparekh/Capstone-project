@@ -7,28 +7,28 @@ const MF_FUNDS = [
     name: "SBI Bluechip",
     type: "Large Cap",
     risk: "Moderate",
-    color: "#0ea5e9",
+    color: "#2563eb",
   },
   {
     code: "118834",
     name: "Mirae Large Cap",
     type: "Large Cap",
     risk: "Moderate",
-    color: "#6366f1",
+    color: "#7c3aed",
   },
   {
     code: "120843",
     name: "Axis Midcap",
     type: "Mid Cap",
     risk: "High",
-    color: "#f59e0b",
+    color: "#d97706",
   },
   {
     code: "125354",
     name: "Parag Parikh Flexi",
     type: "Flexi Cap",
     risk: "Moderate",
-    color: "#10b981",
+    color: "#059669",
   },
 ];
 
@@ -36,36 +36,36 @@ export const WATCHLIST_CATEGORIES = [
   {
     id: "crypto",
     label: "Crypto",
-    emoji: "₿",
+    symbol: "BTC",
     desc: "BTC & ETH vs USD",
     freq: "real-time",
     items: [
-      { id: "btc", label: "Bitcoin", unit: "USD", icon: "₿" },
-      { id: "eth", label: "Ethereum", unit: "USD", icon: "Ξ" },
+      { id: "btc", label: "Bitcoin", unit: "USD", symbol: "BTC" },
+      { id: "eth", label: "Ethereum", unit: "USD", symbol: "ETH" },
     ],
   },
   {
     id: "sectors",
     label: "NSE Sectors",
-    emoji: "🏭",
+    symbol: "NSE",
     desc: "Nifty sector indices",
     freq: "delayed ~15 min",
     items: [
-      { id: "niftyit", label: "Nifty IT", unit: "pts", icon: "💻" },
-      { id: "niftybank", label: "Nifty Bank", unit: "pts", icon: "🏦" },
-      { id: "niftyauto", label: "Nifty Auto", unit: "pts", icon: "🚗" },
-      { id: "niftypharma", label: "Nifty Pharma", unit: "pts", icon: "💊" },
+      { id: "niftyit", label: "Nifty IT", unit: "pts", symbol: "IT" },
+      { id: "niftybank", label: "Nifty Bank", unit: "pts", symbol: "BNK" },
+      { id: "niftyauto", label: "Nifty Auto", unit: "pts", symbol: "AUT" },
+      { id: "niftypharma", label: "Nifty Pharma", unit: "pts", symbol: "PHR" },
     ],
   },
   {
     id: "us",
     label: "US Markets",
-    emoji: "🗽",
+    symbol: "US",
     desc: "S&P 500 & NASDAQ",
     freq: "delayed ~15 min",
     items: [
-      { id: "sp500", label: "S&P 500", unit: "pts", icon: "📊" },
-      { id: "nasdaq", label: "NASDAQ", unit: "pts", icon: "📈" },
+      { id: "sp500", label: "S&P 500", unit: "pts", symbol: "SPX" },
+      { id: "nasdaq", label: "NASDAQ", unit: "pts", symbol: "NDX" },
     ],
   },
 ];
@@ -98,14 +98,6 @@ async function fetchYahooQuote(ticker) {
       const w = await r.json();
       if (!w?.contents) throw new Error("empty");
       return JSON.parse(w.contents);
-    },
-    async () => {
-      const r = await fetch(
-        `https://thingproxy.freeboard.io/fetch/${yahooUrl}`,
-        { signal: AbortSignal.timeout(9000) },
-      );
-      if (!r.ok) throw new Error(`thingproxy ${r.status}`);
-      return r.json();
     },
   ];
   let lastErr;
@@ -204,50 +196,79 @@ async function fetchExtraData(categoryIds) {
 
   return result;
 }
+async function fetchInflation() {
+  const url =
+    "https://api.tradingeconomics.com/india/inflation-rate?c=guest:guest&format=json";
 
-async function fetchWorldBank(code) {
-  const r = await fetch(
-    `https://api.worldbank.org/v2/country/IN/indicator/${code}?format=json&mrv=3&mrnev=1`,
-    { signal: AbortSignal.timeout(8000) },
-  );
-  if (!r.ok) throw new Error(`WB ${r.status}`);
-  const json = await r.json();
-  const pts = json?.[1];
-  if (!Array.isArray(pts)) throw new Error("bad response");
-  const latest = pts.find((p) => p?.value != null);
-  if (!latest) throw new Error("no data");
-  return { value: latest.value, year: latest.date };
+  const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+
+  if (!r.ok) throw new Error("Inflation fetch failed");
+
+  const d = await r.json();
+
+  if (!Array.isArray(d) || !d.length) throw new Error("Invalid inflation data");
+
+  return {
+    value: parseFloat(d[0].Value),
+    date: d[0].Date,
+  };
 }
 
+// async function fetchWorldBank(code) {
+//   const r = await fetch(
+//     `https://api.worldbank.org/v2/country/IN/indicator/${code}?format=json&mrv=3&mrnev=1`,
+//     { signal: AbortSignal.timeout(8000) },
+//   );
+//   if (!r.ok) throw new Error(`WB ${r.status}`);
+//   const json = await r.json();
+//   const pts = json?.[1];
+//   if (!Array.isArray(pts)) throw new Error("bad response");
+//   const latest = pts.find((p) => p?.value != null);
+//   if (!latest) throw new Error("no data");
+//   return { value: latest.value, year: latest.date };
+// }
 async function fetchRBIRepoRate() {
-  const rbiUrl = "https://www.rbi.org.in/Scripts/bs_viewcontent.aspx?Id=4";
-  const proxies = [
-    `https://corsproxy.io/?${encodeURIComponent(rbiUrl)}`,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(rbiUrl)}`,
-    `https://api.allorigins.win/get?url=${encodeURIComponent(rbiUrl)}`,
-  ];
-  let html = "";
-  for (const p of proxies) {
-    try {
-      const r = await fetch(p, { signal: AbortSignal.timeout(10000) });
-      if (!r.ok) continue;
-      const body = await r.text();
-      try {
-        const parsed = JSON.parse(body);
-        html = parsed?.contents || body;
-      } catch {
-        html = body;
-      }
-      if (html.length > 500) break;
-    } catch {
-      continue;
-    }
-  }
-  if (!html) throw new Error("proxies failed");
-  const m = html.match(/Policy\s+Repo\s+Rate[\s\S]{0,300}?(\d+\.\d+)\s*%/i);
-  if (!m) throw new Error("not found");
-  return parseFloat(m[1]);
+  const url =
+    "https://api.tradingeconomics.com/india/interest-rate?c=guest:guest&format=json";
+
+  const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+  if (!r.ok) throw new Error("Repo rate fetch failed");
+
+  const d = await r.json();
+
+  if (!Array.isArray(d) || !d.length) throw new Error("Invalid repo data");
+
+  return parseFloat(d[0].Value);
 }
+// async function fetchRBIRepoRate() {
+//   const rbiUrl = "https://www.rbi.org.in/Scripts/bs_viewcontent.aspx?Id=4";
+//   const proxies = [
+//     `https://corsproxy.io/?${encodeURIComponent(rbiUrl)}`,
+//     `https://api.allorigins.win/raw?url=${encodeURIComponent(rbiUrl)}`,
+//     `https://api.allorigins.win/get?url=${encodeURIComponent(rbiUrl)}`,
+//   ];
+//   let html = "";
+//   for (const p of proxies) {
+//     try {
+//       const r = await fetch(p, { signal: AbortSignal.timeout(10000) });
+//       if (!r.ok) continue;
+//       const body = await r.text();
+//       try {
+//         const parsed = JSON.parse(body);
+//         html = parsed?.contents || body;
+//       } catch {
+//         html = body;
+//       }
+//       if (html.length > 500) break;
+//     } catch {
+//       continue;
+//     }
+//   }
+//   if (!html) throw new Error("proxies failed");
+//   const m = html.match(/Policy\s+Repo\s+Rate[\s\S]{0,300}?(\d+\.\d+)\s*%/i);
+//   if (!m) throw new Error("not found");
+//   return parseFloat(m[1]);
+// }
 
 export async function fetchLiveMarket() {
   const result = {
@@ -263,7 +284,6 @@ export async function fetchLiveMarket() {
   };
 
   await Promise.allSettled([
-    // Forex
     (async () => {
       const r = await fetch("https://open.er-api.com/v6/latest/USD", {
         signal: AbortSignal.timeout(6000),
@@ -284,27 +304,23 @@ export async function fetchLiveMarket() {
         result.gbpInr.up = g < 106;
       }
     })(),
-    // CPI
-    fetchWorldBank("FP.CPI.TOTL.ZG")
-      .then(({ value, year }) => {
+    fetchInflation()
+      .then(({ value, date }) => {
         result.inflation = value.toFixed(1) + "%";
-        result.inflationYear = year;
+        result.inflationYear = date.slice(0, 4);
       })
-      .catch(() => {}),
-    // GDP
-    fetchWorldBank("NY.GDP.MKTP.KD.ZG")
+      .catch((err) => console.error("Inflation error:", err)),
+    fetchInflation("NY.GDP.MKTP.KD.ZG")
       .then(({ value, year }) => {
         result.gdp = value.toFixed(1) + "%";
         result.gdpYear = year;
       })
       .catch(() => {}),
-    // Repo
     fetchRBIRepoRate()
       .then((rate) => {
         result.repoRate = rate.toFixed(2) + "%";
       })
       .catch(() => {}),
-    // MFs
     ...MF_FUNDS.map((fund, i) =>
       fetch(`https://api.mfapi.in/mf/${fund.code}/latest`, {
         signal: AbortSignal.timeout(6000),
@@ -345,7 +361,7 @@ function getMacroMeta(m) {
   return [
     {
       id: "usd",
-      icon: "💵",
+      symbol: "$₹",
       label: "USD / INR",
       val: "₹" + usd.toFixed(2),
       unit: "per $1",
@@ -360,31 +376,31 @@ function getMacroMeta(m) {
         usdSig === "strong"
           ? "Rupee Strong"
           : usdSig === "weak"
-            ? "Rupee Weak"
+            ? "USD Storng"
             : "Rupee Stable",
       src: "open.er-api.com",
       freq: "real-time",
       what: "Rupees needed to buy one US dollar.",
-      why: "The most-watched forex pair for India. A weaker rupee raises import costs (fuel, electronics), pushing inflation higher. A stronger rupee helps importers but hurts exporters and IT firms.",
+      why: "The primary forex pair for India. A weaker rupee raises import costs — fuel, electronics — pushing inflation higher. A stronger rupee helps importers but pressures IT exporters.",
       now:
         usdSig === "strong"
-          ? `At ₹${usd.toFixed(2)}, the rupee is firm. Import costs are lower — good for fuel prices and foreign travel.`
+          ? `At ₹${usd.toFixed(2)}, the rupee is firm. Import costs are lower — favourable for fuel prices and foreign travel.`
           : usdSig === "weak"
             ? `At ₹${usd.toFixed(2)}, the rupee is under pressure. Expect higher fuel and electronics prices. RBI may intervene.`
-            : `At ₹${usd.toFixed(2)}, the rupee is in a stable range. No immediate stress on import prices.`,
+            : `At ₹${usd.toFixed(2)}, the rupee is range-bound. No immediate stress on import prices.`,
       investor:
         usdSig === "weak"
-          ? "A weak rupee can boost international fund (US ETF) returns for Indian investors. Consider diversifying globally."
-          : "Stable rupee keeps domestic equity and debt returns unaffected by currency drag.",
+          ? "A weak rupee amplifies returns on international funds (US ETFs) for Indian investors. Consider selective global diversification."
+          : "Stable rupee means domestic equity and debt returns are unaffected by currency drag.",
       range: "Recent range: ₹82–88",
       tip:
         usdSig === "weak"
-          ? "📌 Consider US equity ETFs or international funds to hedge INR risk."
-          : "📌 No currency hedge needed right now.",
+          ? "Consider US equity ETFs or international funds to hedge INR depreciation risk."
+          : "No currency hedge required at this level.",
     },
     {
       id: "eur",
-      icon: "🌍",
+      symbol: "€₹",
       label: "EUR / INR",
       val: "₹" + eur.toFixed(2),
       unit: "per €1",
@@ -394,16 +410,16 @@ function getMacroMeta(m) {
       src: "open.er-api.com",
       freq: "real-time",
       what: "Rupees needed to buy one Euro.",
-      why: "Relevant for imports of European machinery, luxury goods, pharma APIs, and for students/travelers to Europe.",
+      why: "Relevant for European machinery imports, pharma APIs, luxury goods, and for students or travelers headed to Europe.",
       now: `At ₹${eur.toFixed(2)}, European imports are ${eur > 92 ? "expensive" : "reasonably priced"} for Indian buyers.`,
       investor:
-        "EUR/INR matters if you invest in European equity funds — rising EUR/INR gives a currency tailwind on top of market returns.",
+        "EUR/INR matters for European equity fund investors — a rising EUR/INR adds a currency tailwind on top of market returns.",
       range: "Typical range: ₹87–95",
-      tip: "📌 Relevant for European fund investors and students planning to study in Europe.",
+      tip: "Relevant for investors in European funds and students planning to study in Europe.",
     },
     {
       id: "gbp",
-      icon: "🇬🇧",
+      symbol: "£₹",
       label: "GBP / INR",
       val: "₹" + gbp.toFixed(2),
       unit: "per £1",
@@ -413,16 +429,16 @@ function getMacroMeta(m) {
       src: "open.er-api.com",
       freq: "real-time",
       what: "Rupees needed to buy one British pound.",
-      why: "Key for the large Indian diaspora in the UK sending remittances home, for students in the UK, and for UK-India services trade.",
+      why: "Key for the Indian diaspora in the UK sending remittances home, UK students, and UK-India services trade.",
       now: `At ₹${gbp.toFixed(2)}, remittances from the UK convert to ${gbp > 106 ? "more rupees — a silver lining for families receiving money" : "a moderate amount in rupees"}.`,
       investor:
         "NRIs in the UK: a high GBP/INR makes India investing expensive in pound terms but rewarding when converting back.",
       range: "Typical range: ₹100–110",
-      tip: "📌 High GBP/INR is good news for NRI remittances coming to India.",
+      tip: "High GBP/INR is beneficial for NRI remittances incoming to India.",
     },
     {
       id: "repo",
-      icon: "🏦",
+      symbol: "%",
       label: "RBI Repo Rate",
       val: repo.toFixed(2) + "%",
       unit: "per annum",
@@ -442,24 +458,24 @@ function getMacroMeta(m) {
       src: "rbi.org.in",
       freq: "changes ~6×/year",
       what: "The rate at which RBI lends overnight money to commercial banks — the anchor of India's interest rate ecosystem.",
-      why: "When RBI raises repo, home loans and EMIs get costlier to fight inflation. When it cuts, credit gets cheaper to stimulate growth.",
+      why: "When RBI raises repo, home loans and EMIs increase to fight inflation. When it cuts, credit becomes cheaper to stimulate growth.",
       now:
         repoSig === "tight"
-          ? `At ${repo}%, RBI is restrictive. Home loans are elevated (~8.5–9.5%). FDs offer attractive returns (~7–8%).`
-          : `At ${repo}%, RBI is accommodative. Home loans are cheaper. Rate cuts are a tailwind for equity markets.`,
+          ? `At ${repo}%, RBI is restrictive. Home loans are elevated (~8.5–9.5%). Fixed deposits offer attractive returns (~7–8%).`
+          : `At ${repo}%, RBI is accommodative. Home loans are cheaper. Rate cuts tend to be a tailwind for equity markets.`,
       investor:
         repoSig === "tight"
-          ? "✓ Lock in long-duration FDs now. Short-duration debt funds are attractive. Stay the course on equity SIPs."
-          : "✓ Consider moving FD allocation to equity. Debt fund returns may soften with further cuts.",
+          ? "Lock in long-duration fixed deposits now. Short-duration debt funds are attractive. Stay consistent with equity SIPs."
+          : "Consider shifting FD allocation to equity. Debt fund returns may soften with further cuts.",
       range: "Last 5 years: 4.0%–6.5%",
       tip:
         repoSig === "tight"
-          ? "📌 Great time to lock in 3–5 yr FDs at high rates before the rate cycle turns."
-          : "📌 Equity becomes relatively more attractive when rates are low.",
+          ? "Ideal time to lock in 3–5 yr FDs at elevated rates before the rate cycle turns."
+          : "Equity becomes relatively more attractive when rates are low.",
     },
     {
       id: "cpi",
-      icon: "🛒",
+      symbol: "CPI",
       label: "India CPI Inflation",
       val: cpi.toFixed(1) + "%",
       unit: "% YoY",
@@ -479,20 +495,20 @@ function getMacroMeta(m) {
       src: "World Bank API",
       freq: "annual · lags ~6–12 months",
       what: "Consumer Price Index — how much more everyday goods cost vs a year ago.",
-      why: "Inflation is the silent thief of wealth. If investments return 10% but inflation is 6%, your real return is only 4%. RBI targets 4% CPI (±2% band).",
+      why: "Inflation is the silent erosion of wealth. If investments return 10% but inflation is 6%, your real return is only 4%. RBI targets 4% CPI (±2% band).",
       now:
         cpiSig === "high"
-          ? `At ${cpi}%, inflation is above RBI's comfort zone. Your ₹100 today will only buy ₹${(100 / (1 + cpi / 100)).toFixed(1)} worth of goods next year.`
+          ? `At ${cpi}%, inflation exceeds RBI's comfort zone. Your ₹100 today buys only ₹${(100 / (1 + cpi / 100)).toFixed(1)} worth of goods next year.`
           : cpiSig === "low"
             ? `At ${cpi}%, inflation is well-controlled. Real returns on investments are healthy. RBI has room to cut rates.`
             : `At ${cpi}%, inflation is within RBI's 2–6% tolerance. Purchasing power is reasonably protected.`,
-      investor: `Your portfolio needs to beat ${cpi}% just to preserve value. Equity SIPs targeting 12% deliver ~${(12 - cpi).toFixed(1)}% real return. FDs at 7% yield only ${(7 - cpi).toFixed(1)}% real.`,
+      investor: `Your portfolio must return at least ${cpi}% just to preserve value. Equity SIPs targeting 12% deliver ~${(12 - cpi).toFixed(1)}% real return. FDs at 7% yield only ${(7 - cpi).toFixed(1)}% real.`,
       range: "RBI target: 4% (±2% band). Comfort zone: 4–6%",
-      tip: `📌 Real return = nominal return − inflation. At ${cpi}% CPI, beat it or lose purchasing power.`,
+      tip: `Real return = nominal return − inflation. At ${cpi}% CPI, any investment below this level loses purchasing power.`,
     },
     {
       id: "gdp",
-      icon: "📈",
+      symbol: "GDP",
       label: "GDP Growth Rate",
       val: gdp.toFixed(1) + "%",
       unit: "% annual",
@@ -512,19 +528,19 @@ function getMacroMeta(m) {
       src: "World Bank API",
       freq: "annual · lags ~6–12 months",
       what: "How fast India's total economic output grew vs the previous year.",
-      why: "GDP growth drives corporate earnings, job creation, and equity markets. India at 6–8% is among the fastest-growing major economies.",
+      why: "GDP growth drives corporate earnings, job creation, and equity markets. India at 6–8% is among the fastest-growing major economies globally.",
       now:
         gdpSig === "strong"
-          ? `At ${gdp}%, India is growing faster than China, the US, and most of Europe. This macro backdrop is bullish for equity investors.`
+          ? `At ${gdp}%, India grows faster than China, the US, and most of Europe. This macro backdrop is constructive for equity investors.`
           : gdpSig === "moderate"
-            ? `At ${gdp}%, India is growing steadily. Services and domestic consumption are the main engines.`
+            ? `At ${gdp}%, India is growing steadily. Services and domestic consumption are the primary engines.`
             : `At ${gdp}%, growth has moderated. Watch for policy stimulus — rate cuts or fiscal spending could follow.`,
       investor:
         gdpSig === "strong"
           ? "Strong GDP is a tailwind for equity SIPs. Broad-market index funds and flexi-cap funds are well-positioned."
-          : "Even in slower phases, disciplined SIPs smooth out cycles. Don't cut SIP amounts in slowdowns — you buy more units at lower prices.",
+          : "Even in slower phases, disciplined SIPs smooth out cycles. Maintain SIP amounts in slowdowns — you accumulate more units at lower prices.",
       range: "India's avg GDP growth (2000–2024): ~6.5%",
-      tip: "📌 High GDP doesn't mean immediate market returns — but over 5–10 yrs, GDP growth and equity returns are correlated.",
+      tip: "High GDP doesn't guarantee immediate market returns — but over 5–10 years, GDP growth and equity returns are strongly correlated.",
     },
   ];
 }
@@ -550,14 +566,14 @@ function getMFMeta(fund) {
       strategy:
         "Captures 'emerging large-caps' — companies growing faster than the index.",
       idealFor: "Aggressive investors, 7+ yr horizon",
-      note: "Mid-caps can 2–3× large-cap returns — but also 2× the drawdowns.",
+      note: "Mid-caps can 2–3× large-cap returns — but carry 2× the drawdowns.",
     },
     125354: {
       desc: "Flexi Cap with up to 35% in international stocks.",
       strategy:
         "Concentrated, high-conviction portfolio. Global diversification built in.",
       idealFor: "Investors who want one fund — Indian + global exposure",
-      note: "Value-investing principles. Managed by PPFAS team.",
+      note: "Value-investing principles, managed by PPFAS team.",
     },
   };
   return (
@@ -578,37 +594,85 @@ function computeOverallSentiment(macros) {
   if (total >= 3)
     return {
       label: "Bullish",
-      color: "#10b981",
-      bg: "rgba(16,185,129,0.08)",
-      icon: "📈",
+      color: "#059669",
+      bg: "rgba(5,150,105,0.06)",
+      trend: "up",
     };
   if (total <= -3)
     return {
       label: "Bearish",
-      color: "#ef4444",
-      bg: "rgba(239,68,68,0.08)",
-      icon: "📉",
+      color: "#dc2626",
+      bg: "rgba(220,38,38,0.06)",
+      trend: "down",
     };
   if (total >= 1)
     return {
       label: "Cautiously Optimistic",
-      color: "#0ea5e9",
-      bg: "rgba(14,165,233,0.08)",
-      icon: "🔵",
+      color: "#2563eb",
+      bg: "rgba(37,99,235,0.06)",
+      trend: "up",
     };
   if (total <= -1)
     return {
       label: "Cautious",
-      color: "#f59e0b",
-      bg: "rgba(245,158,11,0.08)",
-      icon: "⚠️",
+      color: "#d97706",
+      bg: "rgba(217,119,6,0.06)",
+      trend: "neutral",
     };
   return {
     label: "Mixed Signals",
-    color: "#8b5cf6",
-    bg: "rgba(139,92,246,0.08)",
-    icon: "〰️",
+    color: "#6d28d9",
+    bg: "rgba(109,40,217,0.06)",
+    trend: "neutral",
   };
+}
+
+// NEW: Real yield calculator
+function RealYieldCalculator({ inflation }) {
+  const infl = parseFloat(inflation) || 5;
+  const instruments = [
+    { name: "Savings Account", nominal: 3.5 },
+    { name: "FD (1 Year)", nominal: 7.0 },
+    { name: "PPF", nominal: 7.1 },
+    { name: "Nifty50 SIP (hist.)", nominal: 12.0 },
+    { name: "Mid Cap SIP (hist.)", nominal: 15.0 },
+  ];
+  return (
+    <div className="eco-yield-calc">
+      <div className="eco-yield-title">
+        Real Returns After {infl}% Inflation
+      </div>
+      <div className="eco-yield-rows">
+        {instruments.map((inst) => {
+          const real = inst.nominal - infl;
+          const positive = real > 0;
+          return (
+            <div key={inst.name} className="eco-yield-row">
+              <span className="eco-yield-name">{inst.name}</span>
+              <div className="eco-yield-bar-wrap">
+                <div className="eco-yield-bar-track">
+                  <div
+                    className={`eco-yield-bar-fill ${positive ? "eco-yield-bar--pos" : "eco-yield-bar--neg"}`}
+                    style={{ width: `${Math.min(100, Math.abs(real) * 6)}%` }}
+                  />
+                </div>
+              </div>
+              <span
+                className={`eco-yield-val ${positive ? "eco-yield-val--pos" : "eco-yield-val--neg"}`}
+              >
+                {positive ? "+" : ""}
+                {real.toFixed(1)}%
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="eco-yield-note">
+        Historical SIP returns are illustrative · past performance ≠ future
+        results
+      </p>
+    </div>
+  );
 }
 
 function SIPCalculator({ fund, inflation }) {
@@ -625,6 +689,7 @@ function SIPCalculator({ fund, inflation }) {
   const realRate = ((1 + rate / 100) / (1 + infl / 100) - 1) * 100;
   const rr = realRate / 100 / 12;
   const realFV = sip * ((Math.pow(1 + rr, months) - 1) / rr) * (1 + rr);
+  const xirr = ((fv / invested) ** (1 / years) - 1) * 100;
 
   const fmt = (n) => "₹" + Math.round(n).toLocaleString("en-IN");
 
@@ -690,18 +755,25 @@ function SIPCalculator({ fund, inflation }) {
           <div className="sip-r-val">{fmt(invested)}</div>
         </div>
         <div className="sip-result-card sip-gains">
-          <div className="sip-r-label">Est. Gains</div>
+          <div className="sip-r-label">Wealth Gained</div>
           <div className="sip-r-val">{fmt(gains)}</div>
         </div>
         <div className="sip-result-card sip-fv">
-          <div className="sip-r-label">Future Value</div>
+          <div className="sip-r-label">Maturity Value</div>
           <div className="sip-r-val sip-r-big">{fmt(fv)}</div>
         </div>
         <div className="sip-result-card sip-real">
-          <div className="sip-r-label">Inflation-adj. value</div>
+          <div className="sip-r-label">Inflation-adjusted</div>
           <div className="sip-r-val sip-r-muted">{fmt(realFV)}</div>
-          <div className="sip-r-sub">at {infl}% CPI</div>
+          <div className="sip-r-sub">
+            at {infl}% CPI · {realRate.toFixed(1)}% real rate
+          </div>
         </div>
+      </div>
+      {/* NEW: XIRR insight */}
+      <div className="sip-xirr-row">
+        <span className="sip-xirr-label">Effective CAGR on investment</span>
+        <span className="sip-xirr-val">{xirr.toFixed(1)}%</span>
       </div>
       <div className="sip-bar-wrap">
         <div
@@ -724,7 +796,7 @@ function SIPCalculator({ fund, inflation }) {
         </span>
       </div>
       <p className="sip-disclaimer">
-        Illustrative only · past performance ≠ future results
+        Illustrative only · past performance does not guarantee future results
       </p>
     </div>
   );
@@ -733,14 +805,14 @@ function SIPCalculator({ fund, inflation }) {
 function MacroCard({ s, loading }) {
   const [open, setOpen] = useState(false);
   const colors = {
-    positive: "#10b981",
-    negative: "#ef4444",
-    neutral: "#8b5cf6",
+    positive: "#059669",
+    negative: "#dc2626",
+    neutral: "#6d28d9",
   };
   const bgs = {
-    positive: "rgba(16,185,129,0.07)",
-    negative: "rgba(239,68,68,0.07)",
-    neutral: "rgba(139,92,246,0.07)",
+    positive: "rgba(5,150,105,0.06)",
+    negative: "rgba(220,38,38,0.06)",
+    neutral: "rgba(109,40,217,0.06)",
   };
   const color = colors[s.sentiment];
   const isLive = s.freq === "real-time";
@@ -757,7 +829,7 @@ function MacroCard({ s, loading }) {
       onClick={() => setOpen((o) => !o)}
     >
       <div className="eco-card-header">
-        <div className="eco-card-icon-wrap">{s.icon}</div>
+        <div className="eco-card-symbol">{s.symbol}</div>
         <div
           className="eco-card-badge"
           style={{ color, background: bgs[s.sentiment] }}
@@ -770,7 +842,6 @@ function MacroCard({ s, loading }) {
           {s.badge}
         </div>
       </div>
-
       <div className="eco-card-value">
         {loading ? (
           <span className="eco-shimmer eco-shimmer--lg" />
@@ -781,38 +852,35 @@ function MacroCard({ s, loading }) {
         )}
         <span className="eco-card-unit">{s.unit}</span>
       </div>
-
       <div className="eco-card-label">{s.label}</div>
       <div className="eco-card-teaser">{s.what}</div>
-
       <div className="eco-card-footer">
         <span
           className={
             "eco-freq " + (isLive ? "eco-freq--live" : "eco-freq--lag")
           }
         >
-          {isLive ? "● LIVE" : "⏱ " + s.freq}
+          {isLive ? "● LIVE" : s.freq}
         </span>
-        <span className="eco-card-toggle">{open ? "▲ less" : "▼ explain"}</span>
+        <span className="eco-card-toggle">{open ? "Hide" : "Explain"}</span>
       </div>
-
       {open && (
         <div className="eco-card-detail" onClick={(e) => e.stopPropagation()}>
           <div className="eco-detail-row eco-detail-row--highlight">
-            <div className="eco-dl">📍 Right now</div>
+            <div className="eco-dl">Current situation</div>
             <div className="eco-dt">{s.now}</div>
           </div>
           <div className="eco-detail-row">
-            <div className="eco-dl">📖 Why it matters</div>
+            <div className="eco-dl">Why it matters</div>
             <div className="eco-dt">{s.why}</div>
           </div>
           <div className="eco-detail-row">
-            <div className="eco-dl">💰 For your portfolio</div>
+            <div className="eco-dl">Portfolio impact</div>
             <div className="eco-dt">{s.investor}</div>
           </div>
           <div className="eco-card-tip">{s.tip}</div>
           <div className="eco-card-meta">
-            <span>📊 {s.range}</span>
+            <span>{s.range}</span>
             <span className="eco-card-src">{s.src}</span>
           </div>
         </div>
@@ -837,14 +905,14 @@ function WatchlistCard({ item, cat, data, loading }) {
       onClick={() => setOpen((o) => !o)}
     >
       <div className="wl-card-header">
-        <span className="wl-card-icon">{item.icon}</span>
+        <span className="wl-card-symbol">{item.symbol}</span>
         <span
           className={
             "eco-freq eco-freq--sm " +
             (isLive ? "eco-freq--live" : "eco-freq--lag")
           }
         >
-          {isLive ? "● LIVE" : "⏱ ~15m"}
+          {isLive ? "● LIVE" : "~15m"}
         </span>
       </div>
       <div className="wl-card-val">
@@ -867,15 +935,12 @@ function WatchlistCard({ item, cat, data, loading }) {
       )}
       <div className="wl-card-label">{item.label}</div>
       <div className="wl-card-unit">{d?.unit || item.unit}</div>
-
       {open && (
         <div className="wl-card-detail" onClick={(e) => e.stopPropagation()}>
           {isError ? (
-            <p className="wl-detail-err">
-              ⚠ API unavailable. Try refreshing in a moment.
-            </p>
+            <p className="wl-detail-err">API unavailable. Try refreshing.</p>
           ) : (
-            <p className="wl-detail-ok">✓ {d?.src || "Public API"}</p>
+            <p className="wl-detail-ok">Source: {d?.src || "Public API"}</p>
           )}
         </div>
       )}
@@ -884,12 +949,7 @@ function WatchlistCard({ item, cat, data, loading }) {
 }
 
 function UserWatchlist({ strategy }) {
-  const defaultFor = (s) => {
-    if (s === "Aggressive") return ["crypto", "us"];
-    if (s === "Conservative") return ["us"];
-    return ["us"];
-  };
-
+  const defaultFor = (s) => (s === "Aggressive" ? ["crypto", "us"] : ["us"]);
   const [selected, setSelected] = useState(() => defaultFor(strategy));
   const [extraData, setExtraData] = useState({});
   const [fetching, setFetching] = useState(false);
@@ -929,22 +989,20 @@ function UserWatchlist({ strategy }) {
     <div className="wl-wrap">
       <div className="wl-header">
         <div className="wl-header-left">
-          <span className="wl-icon-big">🎛️</span>
           <div>
-            <div className="wl-title">Your Watchlist</div>
-            <div className="wl-sub">Select markets to track</div>
+            <div className="wl-title">Market Watchlist</div>
+            <div className="wl-sub">Select categories to monitor</div>
           </div>
         </div>
         <div className="wl-header-right">
-          {fetching && <span className="eco-fetching">fetching…</span>}
+          {fetching && <span className="eco-fetching">Fetching…</span>}
           {lastAt && !fetching && (
             <button className="wl-refresh" onClick={load}>
-              ↻ {lastAt}
+              Refresh · {lastAt}
             </button>
           )}
         </div>
       </div>
-
       <div className="wl-toggles">
         {WATCHLIST_CATEGORIES.map((cat) => {
           const on = selected.includes(cat.id);
@@ -955,7 +1013,7 @@ function UserWatchlist({ strategy }) {
               className={"wl-toggle" + (on ? " wl-toggle--on" : "")}
               onClick={() => toggle(cat.id)}
             >
-              <span className="wl-t-emoji">{cat.emoji}</span>
+              <span className="wl-t-symbol">{cat.symbol}</span>
               <div className="wl-t-info">
                 <span className="wl-t-label">{cat.label}</span>
                 <span
@@ -964,7 +1022,7 @@ function UserWatchlist({ strategy }) {
                     (isLive ? "eco-freq--live" : "eco-freq--lag")
                   }
                 >
-                  {isLive ? "● live" : "⏱ delayed"}
+                  {isLive ? "● live" : "delayed"}
                 </span>
               </div>
               {on && <span className="wl-t-check">✓</span>}
@@ -972,11 +1030,9 @@ function UserWatchlist({ strategy }) {
           );
         })}
       </div>
-
       {selected.length === 0 ? (
         <div className="wl-empty">
-          <span>📭</span>
-          <p>Select a category to start tracking</p>
+          <p>Select a category to begin tracking</p>
         </div>
       ) : (
         <div className="wl-grid">
@@ -1002,10 +1058,10 @@ function MFCard({ fund, loading, inflation }) {
   const meta = getMFMeta(fund);
   const riskColor =
     fund.risk === "High"
-      ? "#f59e0b"
+      ? "#d97706"
       : fund.risk === "Low"
-        ? "#10b981"
-        : "#0ea5e9";
+        ? "#059669"
+        : "#2563eb";
 
   return (
     <div
@@ -1049,26 +1105,23 @@ function MFCard({ fund, loading, inflation }) {
               {fund.up ? "▲" : "▼"} {fund.change}
             </span>
           )}
-          <span className="eco-freq eco-freq--lag eco-freq--xs">
-            ⏱ daily NAV
-          </span>
+          <span className="eco-freq eco-freq--lag eco-freq--xs">Daily NAV</span>
           <span className="mf-toggle">{open ? "▲" : "▼"}</span>
         </div>
       </div>
-
       {open && (
         <div className="mf-detail" onClick={(e) => e.stopPropagation()}>
           <div className="mf-detail-grid">
             <div className="mf-detail-block">
-              <div className="mf-dl">🎯 Strategy</div>
+              <div className="mf-dl">Strategy</div>
               <div className="mf-dt">{meta.strategy}</div>
             </div>
             <div className="mf-detail-block mf-detail-block--highlight">
-              <div className="mf-dl">👤 Ideal for</div>
+              <div className="mf-dl">Ideal for</div>
               <div className="mf-dt">{meta.idealFor}</div>
             </div>
             <div className="mf-detail-block">
-              <div className="mf-dl">💡 Note</div>
+              <div className="mf-dl">Note</div>
               <div className="mf-dt">{meta.note}</div>
             </div>
           </div>
@@ -1096,19 +1149,18 @@ export default function EconomicDashboard({
     <section className="eco-wrap">
       <div className="eco-header">
         <div className="eco-header-left">
-          <div className="eco-header-icon">📡</div>
           <div>
             <h2 className="eco-title">Economic Pulse</h2>
             <p className="eco-subtitle">
-              Live Indian macro data · click any card to understand what it
-              means for your money
+              Live Indian macro indicators · Click any card for portfolio
+              implications
             </p>
           </div>
         </div>
         <div className="eco-header-right">
-          {loading && <span className="eco-fetching">fetching…</span>}
+          {loading && <span className="eco-fetching">Fetching…</span>}
           {updatedAt && !loading && (
-            <span className="eco-updated">↻ {updatedAt}</span>
+            <span className="eco-updated">Updated {updatedAt}</span>
           )}
         </div>
       </div>
@@ -1118,16 +1170,19 @@ export default function EconomicDashboard({
           className="eco-sentiment-banner"
           style={{ background: overall.bg, borderColor: overall.color + "30" }}
         >
-          <span className="eco-sent-icon">{overall.icon}</span>
+          <div
+            className="eco-sent-indicator"
+            style={{ background: overall.color }}
+          />
           <div>
             <div className="eco-sent-label" style={{ color: overall.color }}>
-              Overall Macro Outlook: <strong>{overall.label}</strong>
+              Macro Outlook: <strong>{overall.label}</strong>
             </div>
             <div className="eco-sent-sub">
-              Based on {macros.filter((m) => m.sentiment === "positive").length}{" "}
-              positive, {macros.filter((m) => m.sentiment === "neutral").length}{" "}
-              neutral, {macros.filter((m) => m.sentiment === "negative").length}{" "}
-              negative signals across 6 indicators
+              {macros.filter((m) => m.sentiment === "positive").length} positive
+              · {macros.filter((m) => m.sentiment === "neutral").length} neutral
+              · {macros.filter((m) => m.sentiment === "negative").length}{" "}
+              negative across 6 indicators
             </div>
           </div>
         </div>
@@ -1139,15 +1194,18 @@ export default function EconomicDashboard({
         ))}
       </div>
 
+      {/* NEW: Real yield comparison */}
+      {inflation && <RealYieldCalculator inflation={inflation} />}
+
       <div className="eco-section-head">
         <div>
           <span className="eco-section-label">Mutual Fund NAVs</span>
           <span className="eco-section-sub">
             {" "}
-            · click to explore + calculate SIP returns
+            · Click to explore and calculate SIP returns
           </span>
         </div>
-        <span className="eco-freq eco-freq--lag">⏱ daily · api.mfapi.in</span>
+        <span className="eco-freq eco-freq--lag">Daily · api.mfapi.in</span>
       </div>
 
       <div className="eco-mf-grid">
@@ -1164,7 +1222,7 @@ export default function EconomicDashboard({
           CoinGecko · Yahoo Finance
         </span>
         <span className="eco-footer-disc">
-          Educational only · not financial advice
+          Educational purposes only · not financial advice
         </span>
       </div>
     </section>

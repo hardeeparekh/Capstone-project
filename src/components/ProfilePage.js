@@ -676,8 +676,8 @@ export default function ProfilePage({ user, onLogout }) {
             <div className="avatar-ring" />
           </div>
           <div className="pp-identity">
-            <span className="eyebrow">COMMANDER</span>
-            <h1 className="pp-username">{user?.name || "Operator-01"}</h1>
+            <span className="eyebrow">Dashboard</span>
+            <h1 className="pp-username">{user?.name || "Welcome"}</h1>
             <div className="pp-badges">
               <span
                 className="pp-badge pp-badge--strategy"
