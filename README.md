@@ -1,11 +1,12 @@
 # 💎 WorthWise — Next-Gen AI Financial Decision & Learning Platform
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-worthwise--web.onrender.com-00C853?style=for-the-badge&logo=render&logoColor=white)](https://worthwise-web.onrender.com)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Express](https://img.shields.io/badge/Node.js-Express_5-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth_%26_DB-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Groq AI](https://img.shields.io/badge/Groq_Cloud-Llama_3.3_70B-F05138?style=for-the-badge&logo=groq&logoColor=white)](https://groq.com/)
-[![Deployed on Render](https://img.shields.io/badge/Render-Deployed-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://render.com/)
 
+> **🌐 Live Production Site:** [https://worthwise-web.onrender.com](https://worthwise-web.onrender.com)  
 > **Master Personal Finance by Doing, Not Just Reading.**  
 > WorthWise is an interactive, AI-powered financial simulation platform built for Gen-Z, young adults, and novice investors. Learn how real-world financial choices, market shocks, and investment strategies shape long-term wealth through Monte Carlo forecasting, interactive decision gaming, and hyper-personalized Groq AI advice.
 
@@ -109,13 +110,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser!
 
 WorthWise includes a ready-to-use [`render.yaml`](./render.yaml) blueprint configuration for 1-click deployment on **Render**:
 
-1. Fork or push this repository to GitHub.
-2. Go to [Render Dashboard](https://dashboard.render.com/) ➔ **New +** ➔ **Blueprint**.
-3. Select your repository `hardeeparekh/Capstone-project`.
-4. Enter your `GROQ_API_KEY` and `SUPABASE_ANON_KEY` when prompted.
-5. Click **Apply**! Render will deploy both:
-   - ⚡ `worthwise-api` (Backend API Service)
-   - 🌐 `worthwise-web` (Frontend Static Site)
+- **🌐 Live Production Website**: [https://worthwise-web.onrender.com](https://worthwise-web.onrender.com)
+- **⚡ Live Backend API**: [https://worthwise-api.onrender.com](https://worthwise-api.onrender.com)
 
 ---
 
