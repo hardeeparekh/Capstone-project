@@ -117,4 +117,4 @@ WorthWise includes a ready-to-use [`render.yaml`](./render.yaml) blueprint confi
 
 ## 📜 License & Credits
 
-Built with ❤️ by **Hardeep Arekh** for the Capstone Project.
+Built with ❤️ by **WE Cohort 6 Students** for the Capstone Project.
