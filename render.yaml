@@ -2,7 +2,7 @@ services:
   # 1. Backend Web Service (Node.js Express Server)
   - type: web
     name: worthwise-api
-    runtime: node
+    env: node
     plan: free
     region: singapore
     buildCommand: cd server && npm install
@@ -19,9 +19,9 @@ services:
       - key: GROQ_MODEL
         value: llama-3.1-8b-instant
 
+staticSites:
   # 2. Frontend Static Site (React Single Page App)
-  - type: static_site
-    name: worthwise-web
+  - name: worthwise-web
     buildCommand: npm install && npm run build
     staticPublishPath: ./build
     routes:
