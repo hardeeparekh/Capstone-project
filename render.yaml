@@ -2,14 +2,14 @@ services:
   # 1. Backend Web Service (Node.js Express Server)
   - type: web
     name: worthwise-api
-    env: node
+    runtime: node
     plan: free
     region: singapore
     buildCommand: cd server && npm install
     startCommand: cd server && node server.js
     envVars:
       - key: PORT
-        value: 5000
+        value: "5000"
       - key: SUPABASE_URL
         value: https://yoghqhcaesogkvorfnei.supabase.co
       - key: SUPABASE_ANON_KEY
@@ -20,9 +20,8 @@ services:
         value: llama-3.1-8b-instant
 
   # 2. Frontend Static Site (React Single Page App)
-  - type: static
+  - type: static_site
     name: worthwise-web
-    plan: free
     buildCommand: npm install && npm run build
     staticPublishPath: ./build
     routes:
