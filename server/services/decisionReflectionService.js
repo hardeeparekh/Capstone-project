@@ -1,16 +1,19 @@
 function getFallbackReflection(history, finalUser, finalOptimal) {
   const diff = finalUser - finalOptimal;
   const crashWithdrawal = history.find(
-    (item) => item.event === "CRASH" && item.action === "withdraw"
+    (item) => item.event === "CRASH" && item.action === "withdraw",
   );
-  const investMoves = history.filter((item) => item.action === "invest").length;
+  const investMoves = history.filter(
+    (item) => item.action === "invest",
+  ).length;
 
   if (crashWithdrawal) {
     return {
       summary: "Panic Sell Detected",
       detail:
         "You sold during a market crash, which locked in losses and reduced future compounding.",
-      advice: "During deep drawdowns, avoid panic exits and focus on long-term allocation."
+      advice:
+        "During deep drawdowns, avoid panic exits and focus on long-term allocation.",
     };
   }
 
@@ -19,7 +22,8 @@ function getFallbackReflection(history, finalUser, finalOptimal) {
       summary: "Strong Decision Quality",
       detail:
         "Your choices matched or beat the baseline strategy over the full 15-year cycle.",
-      advice: "Repeat this discipline: keep investing through volatility and avoid overreacting."
+      advice:
+        "Repeat this discipline: keep investing through volatility and avoid overreacting.",
     };
   }
 
@@ -28,7 +32,8 @@ function getFallbackReflection(history, finalUser, finalOptimal) {
       summary: "Too Conservative",
       detail:
         "You stayed under-invested for many years and missed upside in growth years.",
-      advice: "Set a minimum yearly investment rule so cash does not stay idle."
+      advice:
+        "Set a minimum yearly investment rule so cash does not stay idle.",
     };
   }
 
@@ -36,14 +41,17 @@ function getFallbackReflection(history, finalUser, finalOptimal) {
     summary: "Close, But Behind Baseline",
     detail:
       "Your final result was slightly below the baseline because timing and allocations were inconsistent.",
-    advice: "Use a stable allocation rule and review only once per year."
+    advice: "Use a stable allocation rule and review only once per year.",
   };
 }
 
 function safeParseModelJson(rawText) {
   if (!rawText || typeof rawText !== "string") return null;
 
-  const cleaned = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const cleaned = rawText
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
   try {
     return JSON.parse(cleaned);
   } catch (error) {
@@ -61,19 +69,17 @@ async function generateDecisionReflection({
   history,
   finalUser,
   finalOptimal,
-  level
+  level,
 }) {
   const fallback = getFallbackReflection(history, finalUser, finalOptimal);
+  const apiKey = process.env.GROQ_API_KEY;
 
-  if (!process.env.GEMINI_API_KEY) {
+  if (!apiKey) {
     return fallback;
   }
 
   try {
-    const { GoogleGenAI } = await import("@google/genai");
-    const ai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY
-    });
+    const model = process.env.GROQ_MODEL || "groq/compound";
 
     const prompt = `
 You are a financial mentor in a decision simulation game.
@@ -91,13 +97,30 @@ Rules:
 - return valid JSON only
 `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt
-    });
+    const res = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: model,
+          temperature: 0.7,
+          max_tokens: 512,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      },
+    );
 
-    const rawText =
-      typeof response.text === "function" ? response.text() : response.text;
+    if (!res.ok) {
+      console.error("Groq decision reflection error:", await res.text());
+      return fallback;
+    }
+
+    const json = await res.json();
+    const rawText = json?.choices?.[0]?.message?.content || "";
     const parsed = safeParseModelJson(rawText);
 
     if (
@@ -117,5 +140,5 @@ Rules:
 }
 
 module.exports = {
-  generateDecisionReflection
+  generateDecisionReflection,
 };

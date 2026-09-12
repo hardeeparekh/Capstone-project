@@ -13,7 +13,9 @@ import AuthPage from "./components/AuthPage";
 import ProfilePage from "./components/ProfilePage";
 import ResetPasswordPage from "./components/ResetPasswordPage";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
+
+const DEFAULT_USER = { id: "guest-user", name: "Explorer Guest", email: "guest@worthwise.app" };
 
 function App() {
   const [isAltMode, setIsAltMode] = useState(false);
@@ -154,6 +156,8 @@ function App() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [currentPath]);
 
+  const activeUser = user || DEFAULT_USER;
+
   return (
     <>
       <BackgroundEffects />
@@ -161,7 +165,8 @@ function App() {
         pageProgress={pageProgress}
         isAltMode={isAltMode}
         onToggleMode={() => setIsAltMode((prev) => !prev)}
-        onOpenAuth={() => user ? navigate("/profile") : setIsAuthOpen(true)}
+        onOpenAuth={() => isAuthOpen ? setIsAuthOpen(false) : setIsAuthOpen(true)}
+        onOpenDashboard={() => navigate("/profile")}
         onGoHome={() => navigate("/")}
         user={user}
         isProfileActive={currentPath === "/profile"}
@@ -170,15 +175,17 @@ function App() {
       <main>
         {currentPath === "/reset-password" ? (
           <ResetPasswordPage onDone={() => { navigate("/"); setIsAuthOpen(true); }} />
-        ) : currentPath === "/profile" && user ? (
+        ) : currentPath === "/profile" ? (
           <ProfilePage
-            user={user}
+            user={activeUser}
+            realUser={user}
             onLogout={handleLogout}
+            onRequireAuth={() => setIsAuthOpen(true)}
             onClose={() => navigate("/")}
           />
         ) : (
           <>
-            <HeroSection />
+            <HeroSection onLaunchSim={() => navigate("/profile")} />
             <GallerySection />
             <TimelineSection
               timelineRef={timelineRef}
@@ -186,7 +193,7 @@ function App() {
             />
             <LevelsSection />
             <MathSection />
-            <CTASection />
+            <CTASection onLaunchSim={() => navigate("/profile")} />
           </>
         )}
       </main>

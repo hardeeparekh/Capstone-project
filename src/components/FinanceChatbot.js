@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
 
 const CATEGORIES = [
   {
@@ -61,29 +61,93 @@ const CATEGORIES = [
 ];
 
 function buildSystemPrompt(ctx) {
-  const surplus = ctx
-    ? Math.max(0, (ctx.income || 0) - (ctx.expenses || 0))
-    : 0;
-  const sipSuggested = Math.round(surplus * 0.3);
+  if (!ctx) {
+    return `You are WorthBot — a sharp, warm, and highly knowledgeable Indian personal finance advisor embedded in WorthWise, a financial planning app.
 
-  const profile = ctx
-    ? `== USER'S LIVE FINANCIAL PROFILE ==
-• Age: ${ctx.age} years old
-• Monthly income: ₹${ctx.income?.toLocaleString("en-IN")}
-• Monthly expenses: ₹${ctx.expenses?.toLocaleString("en-IN")}
-• Monthly surplus: ₹${surplus.toLocaleString("en-IN")} (${ctx.income > 0 ? Math.round((surplus / ctx.income) * 100) : 0}% savings rate)
-• Suggested SIP: ~₹${sipSuggested.toLocaleString("en-IN")}/month (30% of surplus)
-• Risk appetite: ${ctx.strategy}
-• Target corpus: ₹${ctx.targetGoal?.toLocaleString("en-IN")}
-• Investment horizon: ${ctx.sipYears} years
-• Time to target: ${ctx.sipYears} years remaining
+== USER PROFILE ==
+Not set up yet. Encourage calibrating their snapshot in the dashboard for personalized advice.
 
-IMPORTANT: Always reference the user's actual numbers above when answering. Don't use generic examples when you have their real data.`
-    : "== USER PROFILE == Not set up yet. Encourage calibrating their snapshot in the dashboard for personalised advice.";
+== YOUR PERSONALITY & BEHAVIOR ==
+- Direct and confident, never wishy-washy
+- Brief but complete — no padding, no unnecessary caveats
+- Encouraging without being fake
+- Use ₹, Indian number formatting (lakhs/crores), Indian financial products
+
+== RESPONSE FORMAT ==
+- 2-4 short paragraphs OR a brief intro + bullet list (max 5 bullets)
+- Use **bold** for key numbers and important terms
+- Use bullet points starting with "- " for lists
+- End EVERY response with a "💡 **Quick action:**" line — one concrete next step the user can take TODAY
+- Keep total response under 250 words
+
+== SCOPE ==
+Answer ONLY personal finance questions: investing, SIP, mutual funds, budgeting, emergency funds, taxes (Indian), insurance, retirement planning, real estate basics, Indian markets, debt management, credit scores, and WorthWise simulations.
+
+For anything off-topic, reply exactly: "I'm focused on personal finance — ask me anything about investing, budgeting, or tax saving! 💸"`;
+  }
+
+  const p = ctx.profile || (ctx.age !== undefined ? ctx : null);
+  const snap = ctx.snapshot || null;
+  const mc = ctx.monteCarloForecast || null;
+  const ds = ctx.decisionSimulatorResult || null;
+
+  let profileSection = "";
+  if (p) {
+    const surplus = Math.max(0, (p.income || 0) - (p.expenses || 0));
+    const savingsRate = p.income > 0 ? Math.round((surplus / p.income) * 100) : 0;
+    const suggestedSIP = Math.round(surplus * 0.3);
+
+    profileSection = `== USER'S LIVE FINANCIAL PROFILE ==
+• Age: ${p.age} years old
+• Monthly income: ₹${p.income?.toLocaleString("en-IN")}
+• Monthly expenses: ₹${p.expenses?.toLocaleString("en-IN")}
+• Monthly surplus: ₹${surplus.toLocaleString("en-IN")} (${savingsRate}% savings rate)
+• Suggested SIP: ~₹${suggestedSIP.toLocaleString("en-IN")}/month (30% of surplus)
+• Risk appetite: ${p.strategy}
+• Target corpus goal: ₹${p.targetGoal?.toLocaleString("en-IN")}
+• Investment horizon: ${p.sipYears} years`;
+  }
+
+  let snapSection = "";
+  if (snap && snap.hasData) {
+    snapSection = `
+== CALIBRATED FINANCIAL SNAPSHOT ==
+• Emergency Reserve Needed (6 months): ₹${snap.emergencyFund?.toLocaleString("en-IN")}
+• Monthly Savings Capacity: ₹${snap.monthlySavings?.toLocaleString("en-IN")}
+• Suggested SIP Range: ₹${snap.suggestedSIPRange?.min?.toLocaleString("en-IN")} - ₹${snap.suggestedSIPRange?.max?.toLocaleString("en-IN")}`;
+  }
+
+  let mcSection = "";
+  if (mc) {
+    mcSection = `
+== MONTE CARLO SIMULATION RESULTS ==
+• Target Corpus Goal: ₹${(mc.targetAmount || p?.targetGoal || 0).toLocaleString("en-IN")}
+• Goal Success Odds: ${mc.probabilityOfReachingTarget}% chance of reaching target goal
+• Expected Corpus Outcome (Avg/P50): ₹${mc.realAverageValue?.toLocaleString("en-IN")}
+• Worst Case Scenario (P10): ₹${mc.realWorstCase?.toLocaleString("en-IN")}
+• Best Case Scenario (P90): ₹${mc.realBestCase?.toLocaleString("en-IN")}
+• Inflation-Adjusted Purchasing Power: ₹${(mc.inflationAdjustedAverage || mc.realAverageValue)?.toLocaleString("en-IN")}
+• Simulation Analysis: "${mc.explanation || ""}"`;
+  }
+
+  let dsSection = "";
+  if (ds) {
+    dsSection = `
+== 15-YEAR DECISION SIMULATOR RESULTS ==
+• User Final Net Worth: ₹${Math.round(ds.finalUser || 0).toLocaleString("en-IN")}
+• Baseline Benchmark Net Worth: ₹${Math.round(ds.finalOptimal || 0).toLocaleString("en-IN")}
+• Outperformance (Alpha Δ): ${ds.difference >= 0 ? "+" : ""}₹${Math.round(ds.difference || 0).toLocaleString("en-IN")}
+• Simulator Outcome: ${ds.message || ""}`;
+  }
 
   return `You are WorthBot — a sharp, warm, and highly knowledgeable Indian personal finance advisor embedded in WorthWise, a financial planning app.
 
-${profile}
+${profileSection}
+${snapSection}
+${mcSection}
+${dsSection}
+
+IMPORTANT: ALWAYS use and reference the exact financial snapshot, Monte Carlo results, and Decision Simulator metrics above whenever answering questions or giving financial feedback to the user!
 
 == YOUR PERSONALITY ==
 - Direct and confident, never wishy-washy
@@ -100,7 +164,7 @@ ${profile}
 - Keep total response under 250 words
 
 == SCOPE ==
-Answer ONLY personal finance questions: investing, SIP, mutual funds, budgeting, emergency funds, taxes (Indian), insurance, retirement planning, real estate basics, Indian markets (Nifty, Sensex, SEBI regulations), debt management, credit scores.
+Answer ONLY personal finance questions: investing, SIP, mutual funds, budgeting, emergency funds, taxes (Indian), insurance, retirement planning, real estate basics, Indian markets (Nifty, Sensex, SEBI regulations), debt management, credit scores, Monte Carlo simulations, and Decision Simulator strategies.
 
 For anything off-topic, reply exactly: "I'm focused on personal finance — ask me anything about investing, budgeting, or tax saving! 💸"
 
@@ -188,8 +252,8 @@ export default function FinanceChatbot({ financialContext }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
-  const [ollamaStatus, setOllamaStatus] = useState("unknown");
-  const [modelName, setModelName] = useState("llama3.2");
+  const [aiStatus, setAiStatus] = useState("unknown");
+  const [modelName, setModelName] = useState("llama-3.3-70b-versatile");
   const [unread, setUnread] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
   const [copiedIdx, setCopiedIdx] = useState(null);
@@ -204,10 +268,23 @@ export default function FinanceChatbot({ financialContext }) {
     fetch(`${API_BASE}/chat/health`)
       .then((r) => r.json())
       .then((d) => {
-        setOllamaStatus(d.ok ? "ok" : "error");
+        setAiStatus(d.ok ? "ok" : "error");
         if (d.model) setModelName(d.model);
       })
-      .catch(() => setOllamaStatus("error"));
+      .catch(() => setAiStatus("error"));
+  }, []);
+
+  useEffect(() => {
+    const handleOpen = (e) => {
+      setOpen(true);
+      setUnread(false);
+      if (e.detail?.prompt) {
+        setInput(e.detail.prompt);
+        setTimeout(() => inputRef.current?.focus(), 200);
+      }
+    };
+    window.addEventListener("open-worthbot", handleOpen);
+    return () => window.removeEventListener("open-worthbot", handleOpen);
   }, []);
 
   useEffect(() => {
@@ -290,11 +367,12 @@ export default function FinanceChatbot({ financialContext }) {
               const parsed = JSON.parse(line);
               if (parsed.token) {
                 accumulated += parsed.token;
+                const currentContent = accumulated;
                 setMessages((prev) => {
                   const next = [...prev];
                   next[next.length - 1] = {
                     role: "assistant",
-                    content: accumulated,
+                    content: currentContent,
                     streaming: true,
                     ts: placeholderTs,
                   };
@@ -302,11 +380,12 @@ export default function FinanceChatbot({ financialContext }) {
                 });
               }
               if (parsed.done) {
+                const finalContent = accumulated;
                 setMessages((prev) => {
                   const next = [...prev];
                   next[next.length - 1] = {
                     role: "assistant",
-                    content: accumulated,
+                    content: finalContent,
                     streaming: false,
                     ts: placeholderTs,
                   };
@@ -318,14 +397,11 @@ export default function FinanceChatbot({ financialContext }) {
         }
       } catch (err) {
         if (err.name === "AbortError") return;
-        const isOffline = ollamaStatus === "error";
         setMessages((prev) => {
           const next = [...prev];
           next[next.length - 1] = {
             role: "assistant",
-            content: isOffline
-              ? "**Ollama isn't running.**\n\nStart it in your terminal:\n`ollama serve`\n\nThen pull a model if you haven't:\n`ollama pull llama3.2`"
-              : "Something went wrong — please try again.",
+            content: "Something went wrong connecting to Groq Cloud AI — please check your GROQ_API_KEY in server/.env and try again.",
             streaming: false,
             isError: true,
             ts: placeholderTs,
@@ -337,7 +413,7 @@ export default function FinanceChatbot({ financialContext }) {
         if (!open) setUnread(true);
       }
     },
-    [input, messages, streaming, financialContext, ollamaStatus, open],
+    [input, messages, streaming, financialContext, open],
   );
 
   const stopStream = () => {
@@ -357,6 +433,10 @@ export default function FinanceChatbot({ financialContext }) {
     setMessages([]);
     setActiveCategory(null);
   };
+
+  const userProfile = financialContext?.profile || (financialContext?.income !== undefined ? financialContext : null);
+  const monthlySurplus = userProfile ? Math.max(0, (userProfile.income || 0) - (userProfile.expenses || 0)) : 0;
+  const userStrategy = userProfile?.strategy ? userProfile.strategy.toLowerCase() : "moderate";
 
   const isEmpty = messages.length === 0;
   const activeCategoryData = CATEGORIES.find((c) => c.id === activeCategory);
@@ -415,9 +495,9 @@ export default function FinanceChatbot({ financialContext }) {
         <span className="wbot-fab-icon">{open ? "✕" : "💬"}</span>
         {!open && <span className="wbot-fab-label">WorthBot</span>}
         {unread && <span className="wbot-fab-badge" />}
-        {!open && ollamaStatus !== "unknown" && (
+        {!open && aiStatus !== "unknown" && (
           <span
-            className={`wbot-fab-status wbot-fab-status--${ollamaStatus === "ok" ? "live" : "err"}`}
+            className={`wbot-fab-status wbot-fab-status--${aiStatus === "ok" ? "live" : "err"}`}
           />
         )}
       </button>
@@ -429,10 +509,9 @@ export default function FinanceChatbot({ financialContext }) {
           aria-modal="true"
           aria-label="WorthBot Finance Assistant"
         >
-          {ollamaStatus === "error" && (
+          {aiStatus === "error" && (
             <div className="wbot-offline-banner">
-              <span>⚠️ Ollama offline</span>
-              <code>ollama serve</code>
+              <span>⚠️ Backend server unreachable</span>
             </div>
           )}
 
@@ -440,18 +519,18 @@ export default function FinanceChatbot({ financialContext }) {
             <div className="wbot-header-info">
               <div className="wbot-header-avatar">
                 <span>🤖</span>
-                {ollamaStatus === "ok" && (
+                {aiStatus === "ok" && (
                   <span className="wbot-header-pulse" />
                 )}
               </div>
               <div>
                 <div className="wbot-header-name">WorthBot</div>
                 <div className="wbot-header-meta">
-                  {ollamaStatus === "ok" ? (
-                    <>{modelName} · local · private</>
-                  ) : ollamaStatus === "error" ? (
+                  {aiStatus === "ok" ? (
+                    <>Groq Cloud LPU · {modelName} · Ultra-fast</>
+                  ) : aiStatus === "error" ? (
                     <span className="wbot-meta-err">
-                      offline — run ollama serve
+                      offline — start backend server
                     </span>
                   ) : (
                     "connecting…"
@@ -546,13 +625,13 @@ export default function FinanceChatbot({ financialContext }) {
                   <div className="wbot-welcome-avatar">🤖</div>
                   <div>
                     <p className="wbot-welcome-title">
-                      {financialContext
+                      {userProfile
                         ? `Hey! I know your numbers — let's make them work harder.`
                         : "Your personal finance advisor"}
                     </p>
                     <p className="wbot-welcome-sub">
-                      {financialContext
-                        ? `With ₹${Math.max(0, financialContext.income - financialContext.expenses).toLocaleString("en-IN")}/mo surplus and a ${financialContext.strategy.toLowerCase()} strategy, I can give you very specific advice.`
+                      {userProfile
+                        ? `With ₹${monthlySurplus.toLocaleString("en-IN")}/mo surplus and a ${userStrategy} strategy, I can give you very specific advice.`
                         : "Ask me anything about investing, SIPs, taxes, or budgeting."}
                     </p>
                   </div>
@@ -684,12 +763,7 @@ export default function FinanceChatbot({ financialContext }) {
                     sendMessage();
                   }
                 }}
-                placeholder={
-                  ollamaStatus === "error"
-                    ? "Start Ollama to chat…"
-                    : "Ask about SIPs, taxes, budgeting… (Enter to send)"
-                }
-                disabled={ollamaStatus === "error"}
+                placeholder="Ask WorthBot about SIPs, taxes, budgeting… (Enter to send)"
               />
               <div className="wbot-input-actions">
                 {input.length > 0 && (
@@ -714,7 +788,7 @@ export default function FinanceChatbot({ financialContext }) {
                   <button
                     className="wbot-send-btn"
                     onClick={() => sendMessage()}
-                    disabled={!input.trim() || ollamaStatus === "error"}
+                    disabled={!input.trim()}
                     title="Send (Enter)"
                   >
                     <svg

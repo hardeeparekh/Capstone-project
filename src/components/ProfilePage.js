@@ -5,7 +5,7 @@ import DecisionSimulator from "./DecisionSimulator";
 import FinanceChatbot from "./FinanceChatbot";
 import "./ProfilePage.css";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
 
 function spawnConfetti(container) {
   if (!container) return;
@@ -456,11 +456,12 @@ function LiveTicker({ market, userItems, loading }) {
   );
 }
 
-export default function ProfilePage({ user, onLogout }) {
+export default function ProfilePage({ user, realUser, onLogout, onRequireAuth }) {
   const confettiRef = useRef(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [activeSimResult, setActiveSimResult] = useState(null);
+  const [decisionResult, setDecisionResult] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [toast, setToast] = useState(null);
   const [step, setStep] = useState(0);
@@ -570,6 +571,11 @@ export default function ProfilePage({ user, onLogout }) {
   };
 
   const runSimulation = async () => {
+    if (!realUser) {
+      showToast("🔒 Please log in or sign up to run simulations!", "error");
+      if (onRequireAuth) onRequireAuth();
+      return;
+    }
     setIsSimulating(true);
     const riskMap = {
       Conservative: "low",
@@ -653,7 +659,8 @@ export default function ProfilePage({ user, onLogout }) {
     { icon: "🚀", label: "10+ Years", unlocked: form.sipYears >= 10 },
   ];
 
-  const handleDecisionComplete = () => {
+  const handleDecisionComplete = (res) => {
+    if (res) setDecisionResult(res);
     setStep((s) => Math.max(s, 3));
     showToast("Decision simulator completed.");
   };
@@ -1113,6 +1120,8 @@ export default function ProfilePage({ user, onLogout }) {
               expenses: form.expenses,
               savings: form.savings,
             }}
+            realUser={realUser}
+            onRequireAuth={onRequireAuth}
             onComplete={handleDecisionComplete}
           />
 
@@ -1188,7 +1197,14 @@ export default function ProfilePage({ user, onLogout }) {
           onClose={() => setShowModal(false)}
         />
       )}
-      <FinanceChatbot financialContext={form} />
+      <FinanceChatbot
+        financialContext={{
+          profile: form,
+          snapshot: snapshot.hasData ? snapshot : null,
+          monteCarloForecast: activeSimResult || null,
+          decisionSimulatorResult: decisionResult || null,
+        }}
+      />
     </div>
   );
 }

@@ -4,7 +4,7 @@ function randomBarHeight() {
   return 20 + Math.random() * 60;
 }
 
-export default function HeroSection() {
+export default function HeroSection({ onLaunchSim }) {
   const [bars, setBars] = useState(() =>
     Array.from({ length: 12 }, () => randomBarHeight())
   );
@@ -29,9 +29,9 @@ export default function HeroSection() {
           inflation spikes, and tough choices to master long-term discipline.
         </p>
         <div className="hero-actions">
-          <a href="#features" className="btn btn-primary shine">
-            Start Simulation
-          </a>
+          <button onClick={onLaunchSim} className="btn btn-primary shine">
+            🚀 Launch Simulators
+          </button>
           <a href="#levels" className="btn btn-ghost shine">
             View Levels
           </a>

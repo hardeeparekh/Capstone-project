@@ -5,6 +5,7 @@ export default function Navbar({
   isAltMode,
   onToggleMode,
   onOpenAuth,
+  onOpenDashboard,
   onGoHome,
   user,
   isProfileActive,
@@ -51,10 +52,10 @@ export default function Navbar({
         </div>
 
         {!isProfileActive && (
-          <div className="nav-center">
+          <div className="nav-center" style={{ cursor: "pointer" }} onClick={onOpenDashboard}>
             <span className="nav-pill">
               <span className="nav-pulse" />
-              Decision Engine Live
+              Launch Simulators
             </span>
           </div>
         )}
@@ -80,15 +81,13 @@ export default function Navbar({
                   </div>
                 </button>
               ) : (
-                user && (
-                  <button className="menu-item" onClick={onOpenAuth}>
-                    <span className="menu-item-glyph">D</span>
-                    <div className="menu-item-content">
-                      <span className="menu-item-title">Dashboard</span>
-                      <span className="menu-item-sub">Manage Core Data</span>
-                    </div>
-                  </button>
-                )
+                <button className="menu-item" onClick={() => { setIsMenuOpen(false); onOpenDashboard(); }}>
+                  <span className="menu-item-glyph">🚀</span>
+                  <div className="menu-item-content">
+                    <span className="menu-item-title">Dashboard & Simulators</span>
+                    <span className="menu-item-sub">Monte Carlo & Decision Game</span>
+                  </div>
+                </button>
               )}
 
               <button className="menu-item" onClick={onToggleMode}>

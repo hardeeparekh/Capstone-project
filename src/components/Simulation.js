@@ -64,8 +64,24 @@ export default function SimulationModal({ result, onClose }) {
           </div>
         </div>
 
-        <footer className="modal-footer">
-          <button className="btn btn-primary shine full-width" onClick={onClose}>
+        <footer className="modal-footer" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button
+            className="btn btn-secondary shine"
+            style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
+            onClick={() => {
+              onClose();
+              window.dispatchEvent(
+                new CustomEvent("open-worthbot", {
+                  detail: {
+                    prompt: "Can you help me analyze my Monte Carlo forecast results and suggest how to improve my goal odds?",
+                  },
+                })
+              );
+            }}
+          >
+            💬 Discuss with WorthBot
+          </button>
+          <button className="btn btn-primary shine" style={{ flex: 1 }} onClick={onClose}>
             Acknowledge Forecast
           </button>
         </footer>

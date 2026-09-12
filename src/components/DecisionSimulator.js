@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
-const API_BASE = "http://localhost:5000/api/decision-simulator";
+const API_BASE = (process.env.REACT_APP_API_BASE || "http://localhost:5000/api") + "/decision-simulator";
 
 const LEVEL_OPTIONS = [
   {
@@ -28,7 +28,7 @@ function formatInr(value) {
   return `Rs ${Math.round(value || 0).toLocaleString("en-IN")}`;
 }
 
-export default function DecisionSimulator({ defaults, onComplete }) {
+export default function DecisionSimulator({ defaults, realUser, onRequireAuth, onComplete }) {
   const initialValues = useMemo(
     () => ({
       salary: Math.max(120000, Math.round((defaults?.income || 80000) * 12)),
@@ -97,6 +97,10 @@ export default function DecisionSimulator({ defaults, onComplete }) {
     : 0;
 
   const openModal = () => {
+    if (!realUser) {
+      if (onRequireAuth) onRequireAuth();
+      return;
+    }
     setError("");
     setIsOpen(true);
   };
@@ -388,11 +392,27 @@ export default function DecisionSimulator({ defaults, onComplete }) {
 
                   <div className="decision-message">{result.message}</div>
 
-                  <div className="decision-finished-actions">
-                    <button className="btn btn-primary" onClick={resetRun}>
+                  <div className="decision-finished-actions" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      className="btn btn-secondary shine"
+                      style={{ flex: '1 1 100%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
+                      onClick={() => {
+                        closeModal();
+                        window.dispatchEvent(
+                          new CustomEvent("open-worthbot", {
+                            detail: {
+                              prompt: "I just finished playing the 15-Year Decision Simulator game. Can you help me review my strategy and decision timing?",
+                            },
+                          })
+                        );
+                      }}
+                    >
+                      💬 Discuss Strategy with WorthBot
+                    </button>
+                    <button className="btn btn-primary" style={{ flex: 1 }} onClick={resetRun}>
                       Run Again
                     </button>
-                    <button className="btn btn-ghost" onClick={closeModal}>
+                    <button className="btn btn-ghost" style={{ flex: 1 }} onClick={closeModal}>
                       Close
                     </button>
                   </div>
