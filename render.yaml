@@ -19,9 +19,10 @@ services:
       - key: GROQ_MODEL
         value: llama-3.1-8b-instant
 
-staticSites:
   # 2. Frontend Static Site (React Single Page App)
-  - name: worthwise-web
+  - type: web
+    name: worthwise-web
+    env: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./build
     routes:
