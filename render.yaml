@@ -13,7 +13,7 @@ services:
       - key: SUPABASE_URL
         value: https://yoghqhcaesogkvorfnei.supabase.co
       - key: SUPABASE_ANON_KEY
-        sync: false
+        value: sb_publishable_TeiL5frIwQdc1hshpxofxg_TElfjbdV
       - key: GROQ_API_KEY
         sync: false
       - key: GROQ_MODEL
