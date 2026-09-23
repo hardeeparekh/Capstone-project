@@ -7,8 +7,19 @@ const { checkConnection } = require("./services/authService");
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://worthwise-web.onrender.com",
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || true,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true
 }));
 app.use(express.json());

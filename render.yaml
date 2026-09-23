@@ -18,6 +18,8 @@ services:
         sync: false
       - key: GROQ_MODEL
         value: llama-3.1-8b-instant
+      - key: CLIENT_URL
+        value: https://worthwise-web.onrender.com
 
   # 2. Frontend Static Site (React Single Page App)
   - type: web
