@@ -11,6 +11,10 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+
   "dependencies": {
     "@google/genai": "^1.41.0",
     "@supabase/supabase-js": "^2.95.3",
