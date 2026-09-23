@@ -16,8 +16,7 @@ const validateSignup = [
     .notEmpty()
     .withMessage("email is required")
     .isEmail()
-    .withMessage("invalid email format")
-    .normalizeEmail(),
+    .withMessage("invalid email format"),
 
   body("password")
     .notEmpty()
@@ -37,8 +36,7 @@ const validateLogin = [
     .notEmpty()
     .withMessage("email is required")
     .isEmail()
-    .withMessage("invalid email format")
-    .normalizeEmail(),
+    .withMessage("invalid email format"),
 
   body("password").notEmpty().withMessage("password is required"),
 
